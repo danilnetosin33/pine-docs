@@ -272,3 +272,77 @@ app.post("/bars_data", function (req, res) {
 bot.launch();
 
 //Discord API
+
+// MONGO DB
+
+// const { MongoClient } = require("mongodb");
+
+// async function connectMongoDB() {
+//   const uri =
+//     "mongodb+srv://danil:c8hUK7OTi5Po8YjJ@bars.gxkbypt.mongodb.net/test";
+//   const client = new MongoClient(uri);
+//   try {
+//     await client.connect();
+//     await addOneToBars(client);
+//     await addOneToBars(client);
+//     await addOneToBars(client);
+//     await listDatabases(client);
+//     console.log("CONNECTED");
+//   } catch (err) {
+//     console.error("ERROR DB", err);
+//   } finally {
+//     await client.close();
+//   }
+// }
+// async function addOneToBars(client, data_json) {
+//   let bars_db = await client.db("bars_data").collection("bars");
+//   let found = bars_db.find({ _id: 1 });
+//   if (!found) {
+//     bars_db.insertOne(test_obj, function (err, res) {
+//       if (err) {
+//         console.log("ERRRRR", err);
+//       }
+//     });
+//   }
+//   let test_obj = { _id: 1, hello: "world" };
+
+//   console.log("bars_db", bars_db);
+// }
+// async function listDatabases(client) {
+//   databasesList = await client.db().admin().listDatabases();
+
+//   console.log("Databases:");
+//   databasesList.databases.forEach((db) => console.log(` - ${db.name}`));
+// }
+
+// connectMongoDB().catch(console.error);
+
+// CSV work
+
+var fs = require("fs");
+var parse = require("csv-parse");
+const csv = require("csvtojson");
+const { resourceLimits } = require("worker_threads");
+
+async function readCSV(data, file) {
+  function parseToJson(json) {
+    json.forEach((row) => {
+      let row_obj = {};
+      let keys = Object.keys(row)[0].split(",");
+      let values = Object.values(row)[0].split(",");
+      keys.forEach((key, index) => {
+        row_obj[key] = values[index];
+      });
+      data.push(row_obj);
+    });
+  }
+  let csv_obj = await csv({ delimiter: ";" }).fromFile(file);
+  parseToJson(csv_obj);
+}
+let apple_1d = [];
+readCSV(apple_1d, "./assets/AAPL/AAPL, 1H.csv");
+
+setTimeout(() => {
+  console.log("apple_1d", apple_1d);
+  console.log("apple_1d_length", apple_1d.length);
+}, 2000);
