@@ -318,11 +318,7 @@ bot.launch();
 // connectMongoDB().catch(console.error);
 
 // CSV work
-
-var fs = require("fs");
-var parse = require("csv-parse");
 const csv = require("csvtojson");
-const { resourceLimits } = require("worker_threads");
 
 async function readCSV(data, file) {
   function parseToJson(json) {
@@ -346,3 +342,9 @@ setTimeout(() => {
   console.log("apple_1d", apple_1d);
   console.log("apple_1d_length", apple_1d.length);
 }, 2000);
+
+const alert = require("alert");
+alert("Server runs !");
+
+// const notifier = require("node-notifier");
+// notifier.notify("Hello!");

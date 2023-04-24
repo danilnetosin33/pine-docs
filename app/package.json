@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "@telegraf/entity": "^0.3.0",
+    "alert": "^5.1.4",
     "body-parser": "^1.20.2",
     "csv-parse": "^5.3.8",
     "csvtojson": "^2.0.10",
@@ -24,6 +25,7 @@
     "investing-economic-calendar": "^0.0.2",
     "mongodb": "^5.3.0",
     "node-fetch": "^3.3.1",
+    "node-notifier": "^10.0.1",
     "telegraf": "^4.12.2",
     "telegraf-calendar-telegram": "^2.0.2",
     "telegraf-inline-menu": "^6.3.0",
