@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js" integrity="sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js" integrity="sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ" crossorigin="anonymous"></script>
+    <title>Example UI</title>
+</head>
+<body>
+      <button type="button" data-bs-toggle="modal" data-bs-target="#settings_modal" class="btn btn-primary"  id="settings_btn" >Setting</button>
+      <!-- Settings Dialog -->
+      <div class="modal" id="settings_modal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title">Settings :</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div class="modal-body">
+                <form>
+                    <div class="mb-3">
+                      <label for="symbol_setting" class="form-label" required="true">Symbol</label>
+                      <select class="form-select" id="symbol_setting">  
+                      </select> 
+                    </div>
+                    <div class="mb-3">
+                        <label for="timeframe_setting" class="form-label" required="true" >Timeframe</label>
+                        <select class="form-select" id="timeframe_setting">
+    
+                        </select> 
+                      </div>
+                      <div class="mb-3">
+                        <label class="form-label" >Date</label>
+                        <div class="input-group mb-3">
+                            <label for="date_start_setting" class="input-group-text" id="date_start_setting_label">From:</label>
+                            <input type="date" class="form-control" id="date_start_setting" aria-describedby="date_start_setting_label" />
+                          </div>
+                          <div class="input-group mb-3">
+                              <label for="date_end_setting" class="input-group-text" id="date_end_setting_label">To:</label>
+                              <input type="date" class="form-control" id="date_end_setting"  aria-describedby="date_end_setting_label"/>
+                            </div>
+                      </div>
+                    <div style="display:flex">
+                        <button type="button" class="btn btn-outline-danger" style="width:20%;margin-right: 1%;" id="settings_clear">Clear</button>
+                        <button type="button" class="btn btn-primary" style="width:80%" id="settings_submit">Submit</button>
+                    </div>
+                  </form>
+              </div>
+            </div>
+          </div>
+      </div>
+
+
+      <div id="content" style="max-height:80vh;overflow: auto;">
+        Here will be data
+      </div>
+    
+
+    <script type="module">
+        //AAPL
+        import apple_1h  from "./app/assets/JSON/AAPL/AAPL, 1H.json" assert {type:"json"}
+        import apple_4h  from "./app/assets/JSON/AAPL/AAPL, 4H.json" assert {type:"json"}
+        import apple_1d  from "./app/assets/JSON/AAPL/AAPL, 1D.json" assert {type:"json"}
+        import apple_1w from "./app/assets/JSON/AAPL/AAPL, 1W.json" assert {type:"json"}
+        import apple_1m from "./app/assets/JSON/AAPL/AAPL, 1M.json" assert {type:"json"}
+        window.AAPL = {
+            "1H" : apple_1h,
+            "4H" : apple_4h,
+            "1D" : apple_1d,
+            "1W" : apple_1w,
+            "1M" : apple_1m
+        }
+        //AMZN
+        import amazon_1h from "./app/assets/JSON/AMZN/AMZN, 1H.json" assert {type:"json"}
+        import amazon_4h from "./app/assets/JSON/AMZN/AMZN, 4H.json" assert {type:"json"}
+        import amazon_1d from "./app/assets/JSON/AMZN/AMZN, 1D.json" assert {type:"json"}
+        import amazon_1w from "./app/assets/JSON/AMZN/AMZN, 1W.json" assert {type:"json"}
+        import amazon_1m from "./app/assets/JSON/AMZN/AMZN, 1M.json" assert {type:"json"}
+        window.AMZN = {
+            "1H" : amazon_1h,
+            "4H" : amazon_4h,
+            "1D" : amazon_1d,
+            "1W" : amazon_1w,
+            "1M" : amazon_1m
+        }
+        //GOOGL
+        import google_1h from "./app/assets/JSON/GOOGL/GOOGL, 1H.json" assert {type:"json"}
+        import google_4h from "./app/assets/JSON/GOOGL/GOOGL, 4H.json" assert {type:"json"}
+        import google_1d from "./app/assets/JSON/GOOGL/GOOGL, 1D.json" assert {type:"json"}
+        import google_1w from "./app/assets/JSON/GOOGL/GOOGL, 1W.json" assert {type:"json"}
+        import google_1m from "./app/assets/JSON/GOOGL/GOOGL, 1M.json" assert {type:"json"}
+        window.GOOGL = {
+            "1H" : google_1h,
+            "4H" : google_4h,
+            "1D" : google_1d,
+            "1W" : google_1w,
+            "1M" : google_1m
+        }
+        //MSFT
+        import microsoft_1h from "./app/assets/JSON/MSFT/MSFT, 1H.json" assert {type:"json"}
+        import microsoft_4h from "./app/assets/JSON/MSFT/MSFT, 4H.json" assert {type:"json"}
+        import microsoft_1d from "./app/assets/JSON/MSFT/MSFT, 1D.json" assert {type:"json"}
+        import microsoft_1w from "./app/assets/JSON/MSFT/MSFT, 1W.json" assert {type:"json"}
+        import microsoft_1m from "./app/assets/JSON/MSFT/MSFT, 1M.json" assert {type:"json"}
+        window.MSFT = {
+            "1H" : microsoft_1h,
+            "4H" : microsoft_4h,
+            "1D" : microsoft_1d,
+            "1W" : microsoft_1w,
+            "1M" : microsoft_1m
+        }
+        //NVDA
+        import nvidia_1h from "./app/assets/JSON/NVDA/NVDA, 1H.json" assert {type:"json"}
+        import nvidia_4h from "./app/assets/JSON/NVDA/NVDA, 4H.json" assert {type:"json"}
+        import nvidia_1d from "./app/assets/JSON/NVDA/NVDA, 1D.json" assert {type:"json"}
+        import nvidia_1w from "./app/assets/JSON/NVDA/NVDA, 1W.json" assert {type:"json"}
+        import nvidia_1m from "./app/assets/JSON/NVDA/NVDA, 1M.json" assert {type:"json"}
+        window.NVDA = {
+            "1H" : nvidia_1h,
+            "4H" : nvidia_4h,
+            "1D" : nvidia_1d,
+            "1W" : nvidia_1w,
+            "1M" : nvidia_1m
+        }
+        //TSLA
+        import tesla_1h from "./app/assets/JSON/TSLA/TSLA, 1H.json" assert {type:"json"}
+        import tesla_4h from "./app/assets/JSON/TSLA/TSLA, 4H.json" assert {type:"json"}
+        import tesla_1d from "./app/assets/JSON/TSLA/TSLA, 1D.json" assert {type:"json"}
+        import tesla_1w from "./app/assets/JSON/TSLA/TSLA, 1W.json" assert {type:"json"}
+        import tesla_1m from "./app/assets/JSON/TSLA/TSLA, 1M.json" assert {type:"json"}
+        window.TSLA = {
+            "1H" : tesla_1h,
+            "4H" : tesla_4h,
+            "1D" : tesla_1d,
+            "1W" : tesla_1w,
+            "1M" : tesla_1m
+        }
+    </script>
+
+    <script type="module">
+        let symbol_options = [{value:"",text:"Select symbol..."},{value:"AAPL",text:"AAPL"},{value:"AMZN",text:"AMZN"},{value:"GOOGL",text:"GOOGL"},{value:"MSFT",text:"MSFT"},{value:"TSLA",text:"TSLA"}]
+        let timeframe_options = [{value:"",text:"Select timeframe"},{value:"1H",text:"1 hour (1H)"}, {value:"4H",text:"4 hours (4H)"},{value:"1D",text:"1 day (1D)"},{value:"1W",text:"1 week (1W)"},{value:"1M",text:"1 month (1M)"}]
+        
+        let filter_btn = document.getElementById('filter_btn') 
+        //SETTINGS
+        let settings_btn = document.getElementById('settings_btn') 
+        let settings_clear = document.getElementById("settings_clear")
+        let settings_submit = document.getElementById('settings_submit')
+
+        let symbol_setting =  document.getElementById("symbol_setting")
+        let timeframe_setting = document.getElementById("timeframe_setting")
+        let date_start_setting = document.getElementById("date_start_setting")
+        let date_end_setting = document.getElementById("date_end_setting")
+        
+        let setting_form_fields = [symbol_setting,timeframe_setting,date_start_setting, date_end_setting]
+       
+        
+        function addOptions(select_element, options){
+            var x;
+            if(typeof select_element == "string"){
+                x = document.getElementById(select_element);
+            }
+            else{
+                x = select_element
+            }
+          
+            options.forEach((opt)=>{   
+                var option= document.createElement("option");
+                option.value= opt.value;
+                option.text= opt.text;
+                if(opt.value == ""){
+                    option.setAttribute("selected",true)
+                }
+                x.add(option);
+            })
+        }
+        function getSettingsFormData(){
+            let SETTINGS = {}
+            setting_form_fields.forEach((el)=>{
+                if(el && el.value && el.value != ""){
+                    if(el.getAttribute("id") == "date_start_setting" || el.getAttribute("id") == "date_end_setting"){
+                        let field = el.getAttribute('id').split("_");
+                        field.pop()
+                        field = field.join("_")
+                        SETTINGS[field] = new Date(el.value).getTime() / 1000
+                    }
+                    else{
+                        let field =el.getAttribute('id').split("_")[0] 
+                        SETTINGS[field] = el.value
+                    }    
+            }
+            })
+            console.log("SETTINGS", SETTINGS)
+            return SETTINGS
+        }
+        function clearFilterFormData(){
+            setting_form_fields.forEach((el)=>{el.value = ""})
+        }
+        function enableSettings(json){
+            let output_data = []
+            let settings = getSettingsFormData()
+            
+            if(settings.symbol && settings.timeframe){
+                output_data = window[settings.symbol][settings.timeframe]
+            }
+            if(settings.date_start){
+                console.log(output_data.length)
+                output_data = output_data.map((el)=>{if(settings.date_start <= el.time)return el}) 
+                output_data = output_data.filter(el=>el!=null)
+                console.log(output_data.length)
+            }
+            if(settings.date_end){
+                console.log(output_data.length)
+                output_data = output_data.map((el)=>{if(settings.date_end >= el.time)return el}) 
+                output_data = output_data.filter(el=>el!=null)
+                console.log(output_data.length)
+            }
+
+            let thead = ``
+            let tbody = ``
+            Object.keys(output_data[0]).forEach((row)=>{
+                thead += `<th scope="col">${row.toUpperCase()}</th>`
+            })
+            output_data.forEach((el)=>{
+                let tbody_th = ""
+                Object.values(el).forEach((el)=>{
+                    tbody_th += `<td> ${el} </td>`
+                })
+                tbody += `<tr>${tbody_th}</tr>`
+            })
+
+          document.getElementById("content").innerHTML = `
+            Length :: ${output_data.length}
+            <table class="table table-hover">
+                <thead><tr>${thead} </tr></thead>
+                <tbody>${tbody}</tbody>
+            </table>
+          `
+        }
+
+        addOptions(symbol_setting, symbol_options);
+        addOptions(timeframe_setting, timeframe_options);
+        settings_clear.onclick = ()=>{clearFilterFormData()}
+        settings_submit.onclick = ()=>{enableSettings()}
+    </script>
+</body>
+</html>

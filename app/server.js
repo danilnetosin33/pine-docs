@@ -5,10 +5,11 @@ const http = require("http");
 const bodyParser = require("body-parser");
 var express = require("express"),
   app = express(),
-  port = process.env.PORT || 80;
+  port = 7497;
 app.use(express.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.listen(port);
+
 //TRADINGECONOMICS
 const te = require("tradingeconomics");
 te.login("65b105e712d343e:x0blzjyj39tnysh");
@@ -319,7 +320,6 @@ bot.launch();
 
 // CSV work
 const csv = require("csvtojson");
-
 async function readCSV(data, file) {
   function parseToJson(json) {
     json.forEach((row) => {
@@ -329,22 +329,16 @@ async function readCSV(data, file) {
       keys.forEach((key, index) => {
         row_obj[key] = values[index];
       });
-      data.push(row_obj);
+      data.unshift(row_obj);
     });
   }
   let csv_obj = await csv({ delimiter: ";" }).fromFile(file);
   parseToJson(csv_obj);
 }
-let apple_1d = [];
-readCSV(apple_1d, "./assets/AAPL/AAPL, 1H.csv");
 
-setTimeout(() => {
-  console.log("apple_1d", apple_1d);
-  console.log("apple_1d_length", apple_1d.length);
-}, 2000);
+let apple_1h = require("./assets/JSON/AAPL/AAPL, 1D.json");
+console.log("AAPLE JSOIN", apple_1h);
 
-const alert = require("alert");
-alert("Server runs !");
-
-// const notifier = require("node-notifier");
-// notifier.notify("Hello!");
+const { Logger } = require("./logger");
+Logger("telegram", "GGGGGg");
+Logger("alert", "AAAAAAA");

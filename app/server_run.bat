@@ -3,7 +3,10 @@ TITLE Run node.js server
 
 ECHO Start Server ....
 
-cd C:\PINE\pine-docs\app
-node server.js
+
+git clone https://github.com/danilnetosin33/ib-tws.git
+cd ib-tws
+npm i 
+node order.js
 
 PAUSE
