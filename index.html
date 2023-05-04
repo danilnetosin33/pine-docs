@@ -7,9 +7,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js" integrity="sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js" integrity="sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ractive"></script>
+    <script src="./components.js"></script>
     <title>Example UI</title>
 </head>
 <body>
+    <div id="dataSettings">
+    </div>
+    <div id="configSettings">
+    </div>
+
+
       <button type="button" data-bs-toggle="modal" data-bs-target="#settings_modal" class="btn btn-primary"  id="settings_btn" >Setting</button>
       <!-- Settings Dialog -->
       <div class="modal" id="settings_modal" tabindex="-1">
@@ -19,35 +27,7 @@
                 <h5 class="modal-title">Settings :</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
               </div>
-              <div class="modal-body">
-                <form>
-                    <div class="mb-3">
-                      <label for="symbol_setting" class="form-label" required="true">Symbol</label>
-                      <select class="form-select" id="symbol_setting">  
-                      </select> 
-                    </div>
-                    <div class="mb-3">
-                        <label for="timeframe_setting" class="form-label" required="true" >Timeframe</label>
-                        <select class="form-select" id="timeframe_setting">
-    
-                        </select> 
-                      </div>
-                      <div class="mb-3">
-                        <label class="form-label" >Date</label>
-                        <div class="input-group mb-3">
-                            <label for="date_start_setting" class="input-group-text" id="date_start_setting_label">From:</label>
-                            <input type="date" class="form-control" id="date_start_setting" aria-describedby="date_start_setting_label" />
-                          </div>
-                          <div class="input-group mb-3">
-                              <label for="date_end_setting" class="input-group-text" id="date_end_setting_label">To:</label>
-                              <input type="date" class="form-control" id="date_end_setting"  aria-describedby="date_end_setting_label"/>
-                            </div>
-                      </div>
-                    <div style="display:flex">
-                        <button type="button" class="btn btn-outline-danger" style="width:20%;margin-right: 1%;" id="settings_clear">Clear</button>
-                        <button type="button" class="btn btn-primary" style="width:80%" id="settings_submit">Submit</button>
-                    </div>
-                  </form>
+              <div class="modal-body" id="settings_form">
               </div>
             </div>
           </div>
@@ -139,112 +119,96 @@
             "1M" : tesla_1m
         }
     </script>
-
-    <script type="module">
-        let symbol_options = [{value:"",text:"Select symbol..."},{value:"AAPL",text:"AAPL"},{value:"AMZN",text:"AMZN"},{value:"GOOGL",text:"GOOGL"},{value:"MSFT",text:"MSFT"},{value:"TSLA",text:"TSLA"}]
-        let timeframe_options = [{value:"",text:"Select timeframe"},{value:"1H",text:"1 hour (1H)"}, {value:"4H",text:"4 hours (4H)"},{value:"1D",text:"1 day (1D)"},{value:"1W",text:"1 week (1W)"},{value:"1M",text:"1 month (1M)"}]
-        
-        let filter_btn = document.getElementById('filter_btn') 
-        //SETTINGS
-        let settings_btn = document.getElementById('settings_btn') 
-        let settings_clear = document.getElementById("settings_clear")
-        let settings_submit = document.getElementById('settings_submit')
-
-        let symbol_setting =  document.getElementById("symbol_setting")
-        let timeframe_setting = document.getElementById("timeframe_setting")
-        let date_start_setting = document.getElementById("date_start_setting")
-        let date_end_setting = document.getElementById("date_end_setting")
-        
-        let setting_form_fields = [symbol_setting,timeframe_setting,date_start_setting, date_end_setting]
+    
+    <script>
        
-        
-        function addOptions(select_element, options){
-            var x;
-            if(typeof select_element == "string"){
-                x = document.getElementById(select_element);
-            }
-            else{
-                x = select_element
-            }
-          
-            options.forEach((opt)=>{   
-                var option= document.createElement("option");
-                option.value= opt.value;
-                option.text= opt.text;
-                if(opt.value == ""){
-                    option.setAttribute("selected",true)
-                }
-                x.add(option);
-            })
-        }
-        function getSettingsFormData(){
-            let SETTINGS = {}
-            setting_form_fields.forEach((el)=>{
-                if(el && el.value && el.value != ""){
-                    if(el.getAttribute("id") == "date_start_setting" || el.getAttribute("id") == "date_end_setting"){
-                        let field = el.getAttribute('id').split("_");
-                        field.pop()
-                        field = field.join("_")
-                        SETTINGS[field] = new Date(el.value).getTime() / 1000
-                    }
-                    else{
-                        let field =el.getAttribute('id').split("_")[0] 
-                        SETTINGS[field] = el.value
-                    }    
-            }
-            })
-            console.log("SETTINGS", SETTINGS)
-            return SETTINGS
-        }
-        function clearFilterFormData(){
-            setting_form_fields.forEach((el)=>{el.value = ""})
-        }
-        function enableSettings(json){
-            let output_data = []
-            let settings = getSettingsFormData()
-            
-            if(settings.symbol && settings.timeframe){
-                output_data = window[settings.symbol][settings.timeframe]
-            }
-            if(settings.date_start){
-                console.log(output_data.length)
-                output_data = output_data.map((el)=>{if(settings.date_start <= el.time)return el}) 
-                output_data = output_data.filter(el=>el!=null)
-                console.log(output_data.length)
-            }
-            if(settings.date_end){
-                console.log(output_data.length)
-                output_data = output_data.map((el)=>{if(settings.date_end >= el.time)return el}) 
-                output_data = output_data.filter(el=>el!=null)
-                console.log(output_data.length)
-            }
+    import calculate from "./app/pine_to_js.js"
 
-            let thead = ``
-            let tbody = ``
-            Object.keys(output_data[0]).forEach((row)=>{
-                thead += `<th scope="col">${row.toUpperCase()}</th>`
-            })
-            output_data.forEach((el)=>{
-                let tbody_th = ""
-                Object.values(el).forEach((el)=>{
-                    tbody_th += `<td> ${el} </td>`
-                })
-                tbody += `<tr>${tbody_th}</tr>`
-            })
 
-          document.getElementById("content").innerHTML = `
-            Length :: ${output_data.length}
-            <table class="table table-hover">
-                <thead><tr>${thead} </tr></thead>
-                <tbody>${tbody}</tbody>
-            </table>
-          `
-        }
+        let dataRactive = new Ractive({
+            el: "#dataSettings",
+            data:{
+                global_variable:"DATA_SETTINGS",
+                fields: [
+                    {field:"symbol", type:"select", options:[{value:"",text:"Select symbol..."},"AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
+                    {field:"timeframe", type:"select", options:[{value:"",text:"Select timeframe..."},"1H","4H","1D","1W","1M" ]},
+                    {field:"date", type:"date",range:true}
+                ]
+            },
+            template:
+            `
+            <button type="button" data-bs-toggle="modal" data-bs-target="#data_settings_modal" class="btn btn-primary" >Data Settings</button>
+            <div class="modal" id="data_settings_modal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Data Settings :</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="data_settings_form">
+                        <form-builder config={{fields}} global_variable="{{global_variable}}" />
+                    </div>
+                    </div>
+                </div>
+            </div>
+            `
+        })
 
-        addOptions(symbol_setting, symbol_options);
-        addOptions(timeframe_setting, timeframe_options);
-        settings_clear.onclick = ()=>{clearFilterFormData()}
-        settings_submit.onclick = ()=>{enableSettings()}
+        let configRactive = new Ractive({
+            el: "#configSettings",
+            data:{
+                global_variable:"CONFIG_SETTINGS",
+                fields: [
+                    {field:"bars",type:"range"},
+                    {field:"min_bars", label:"Minimum Bars", type:"range"},
+                    {field:"bars_ignore",label:"Bars Ignore", type:"range"},
+                    {field:"percentage", type:"range", steps:true},
+                    {field:"order_call",label:"Order Call", type:"select", options:[{value:"botn",text:"Both"},{value:"long",text:"Long Only"},{value:"short",text:"Short Only"}]}
+                ]
+            },
+            template:
+            `
+            <button type="button" data-bs-toggle="modal" data-bs-target="#config_settings_modal" class="btn btn-primary" >Config Settings</button>
+            <div class="modal" id="config_settings_modal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Config Settings :</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="data_settings_form">
+                        <form-builder config={{fields}} global_variable="{{global_variable}}" />
+                    </div>
+                    </div>
+                </div>
+            </div>
+            `
+        })
+
+
+
+        let ractive = new Ractive({
+            el : "#settings_form",
+            data: {
+                fields : [
+                    {type:"divider",label:"Data Settings"},
+                    {field:"symbol", type:"select", options:[{value:"",text:"Select symbol..."},"AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
+                    {field:"timeframe", type:"select", options:[{value:"",text:"Select timeframe..."},"1H","4H","1D","1W","1M" ]},
+                    {field:"date", type:"date",range:true},
+                    {type:"divider",label:"Config Settings"},
+                    {field:"bars",type:"range"},
+                    {field:"min_bars", label:"Minimum Bars", type:"range"},
+                    {field:"bars_ignore",label:"Bars Ignore", type:"range"},
+                    {field:"percentage", type:"range", steps:true},
+                    {field:"order_call",label:"Order Call", type:"select", options:[{value:"botn",text:"Both"},{value:"long",text:"Long Only"},{value:"short",text:"Short Only"}]}
+                ]
+            },
+            template :
+            `
+                <form-builder config={{fields}} global_variable="SETTINGS" />
+            `
+        })
+
     </script>
 </body>
 </html>
