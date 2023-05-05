@@ -1,7 +1,16 @@
 module.exports = function calculateProfit(dataSettings, configSettings) {
   console.log("START_CALCULATE", dataSettings, configSettings);
-  let symbol = "AAPL";
-  let timeframe = "1W";
+  // Data set
+  let symbol = dataSettings.symbol;
+  let timeframe = dataSettings.timeframe;
+
+  //Config set
+  let orderCall = configSettings.orderCall && "Both";
+  let barsCloseReversal = configSettings.barsCloseReversal;
+  let barsClose = configSettings.barsClose;
+  let barsIgnore = configSettings.barsIgnore;
+  let profitPercantage = configSettings.profitPercantage;
+  let order = 10; // does not affect profit
 
   let bars_data = require(`./assets/JSON/${symbol}/${symbol}, ${timeframe}.json`);
   bars_data = bars_data.reverse();
@@ -22,13 +31,6 @@ module.exports = function calculateProfit(dataSettings, configSettings) {
   var lastReversalBarsLong = [];
   var lastReversalBarsShort = [];
 
-  //INPUTS
-  let orderCall = "Both";
-  let barsCloseReversal = 5;
-  let barsClose = 5;
-  let barsIgnore = 5;
-  let profitPercantage = 5;
-  let order = 10;
   // ARRAYS
   // long
   var entryPriceDisplayLong = [];

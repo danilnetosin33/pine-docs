@@ -1,5 +1,17 @@
+// --> line 128 START
+// Think that problem is : enter several times in close conditions
+
+// Data settings
 let symbol = "AAPL";
-let timeframe = "1W";
+let timeframe = "1D";
+
+// Config settings
+let orderCall = "Both";
+let barsCloseReversal = 5;
+let barsClose = 5;
+let barsIgnore = 5;
+let profitPercantage = 5;
+let order = 10;
 
 let bars_data = require(`./assets/JSON/${symbol}/${symbol}, ${timeframe}.json`);
 bars_data = bars_data.reverse();
@@ -20,13 +32,6 @@ let last_bar_index = bars_data.length - 1;
 var lastReversalBarsLong = [];
 var lastReversalBarsShort = [];
 
-//INPUTS
-let orderCall = "Both";
-let barsCloseReversal = 5;
-let barsClose = 5;
-let barsIgnore = 5;
-let profitPercantage = 5;
-let order = 10;
 // ARRAYS
 // long
 var entryPriceDisplayLong = [];
@@ -37,7 +42,6 @@ var entryBarindexLong = [];
 var countClosedBySLLong = 0;
 var countClosedByProfitLong = 0;
 var countSameCloseBull = 0;
-
 // short
 var entryPriceDisplayShort = [];
 var closePriceDisplayShort = [];
@@ -244,7 +248,6 @@ bars_data.forEach((bar, bar_index) => {
   //LONG
   if (low[bar_index] < lastLow && entryBarindexLong.length > 0) {
     closedBySL = true;
-    console.log("BY_SL", entryBarindexLong, bar_index);
     if (
       entryPriceLong.length > 0 &&
       bar_index > entryBarindexLong[entryBarindexLong.length - 1]
@@ -560,6 +563,7 @@ bars_data.forEach((bar, bar_index) => {
   }
 });
 
+// Profit calculate + info about orders
 let profit = 0;
 let unclosed_arr = [];
 let closed = { unclosed: 0 };
@@ -576,7 +580,6 @@ arrayStatistics.forEach((el) => {
   }
 });
 
-console.log("STATISTIC", arrayStatistics.length);
-console.log("PROFIT", profit);
-// console.log("UNCLOSED", unclosed_arr);
-console.log("CLOSED", closed);
+console.log("All orders :", arrayStatistics.length);
+console.log("PROFIT : ", profit);
+console.log("Orders status: ", closed);

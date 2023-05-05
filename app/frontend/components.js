@@ -19,22 +19,12 @@ Ractive.components["form-builder"] = Ractive.extend({
   
               <div style="display:flex">
                   <button type="button" class="btn btn-outline-danger" style="width:20%;margin-right: 1%;" id="settings_clear" on-click="@this.clearForm()">Clear</button>
-                  <button type="button" class="btn btn-primary" style="width:80%" id="settings_submit" on-click="@this.submitForm()">Submit</button>
+                  <button type="button" class="btn btn-primary" style="width:80%" id="settings_submit" data-bs-dismiss="modal" on-click="@this.submitForm()">Submit</button>
               </div>
           </form>
       `,
   submitForm: function () {
-    //HERE LOGIC
-    // var field_name_arr = [];
-    // for (var i = field_name.from; i <= field_name.to; i++) {
-    //     field_name_arr.push(i);
-    // }
-    // window[field_name] = field_name_arr
-    //////////////////////////////////////////////////////////////
-    // this.get("form_fields").forEach((field) => {
-    //   window[this.get("global_variable")][field.getAttribute("id")] =
-    //     field.value;
-    // });
+    console.log("SUBMIT");
   },
   clearForm: function () {
     this.get("form_fields").forEach((field) => {
@@ -142,8 +132,10 @@ Ractive.components["select-input"] = Ractive.extend({
       `,
   oncomplete: function () {
     this.observe("value", (newValue, oldValue) => {
-      window[this.parent.get("global_variable")][this.get("config.field")] =
-        newValue;
+      if (newValue != "") {
+        window[this.parent.get("global_variable")][this.get("config.field")] =
+          newValue;
+      }
     });
   },
 });
@@ -172,8 +164,10 @@ Ractive.components["date-input"] = Ractive.extend({
     this.set("values", {});
 
     this.observe("values", (newValue, oldValue) => {
-      window[this.parent.get("global_variable")][this.get("config.field")] =
-        newValue;
+      if (newValue.to) {
+        window[this.parent.get("global_variable")][this.get("config.field")] =
+          newValue;
+      }
     });
   },
 });
