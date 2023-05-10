@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+
+
+
+        let inputObj = {
+            var1 : [2, 3, 4, 5, 6, 7, 8],
+            var2: [2, 3, 4, 5, 6, 7, 8],
+            var3: [2, 3, 4, 5, 6, 7, 8],
+            var4: [2, 3, 4, 5, 6, 7, 8],
+
+        }
+
+        // let var1 = [2,3,4,5,6,7,8]
+        // let var2 = [2, 3, 4, 5, 6, 7, 8]
+        // let var3 = [2, 3, 4, 5, 6, 7, 8]
+        // let var4 = [2, 3, 4, 5, 6, 7, 8]
+        let arrTotal = [];
+    Object.keys(inputObj).forEach(key=>{
+        arrTotal.push(inputObj[key])
+    }) 
+
+   console.log("ARR_TOTAL" ,  arrTotal)
+
+        let fillAlias = (arrOfArray)=>{
+            let resultArr = [];
+            let alias = {}
+            arrOfArray.forEach((arr ,  indexOutter)=>{
+                arr.forEach((el ,  indexInner)=>{
+                    resultArr.push(`index${indexOutter}_${indexInner}`)
+                    alias[`index${indexOutter}_${indexInner}`]  =  el
+                })
+            })
+            return {resultArr , alias};
+        }
+
+
+    let arrFull =   fillAlias(arrTotal);
+    console.log("ARRAY_FULL" ,  arrFull);
+    let arr = arrFull.resultArr;
+    let alias = arrFull.alias;
+
+
+        let modify = (originalArr ,  variables) => {
+            let resultZboubNew = originalArr.map(el => el.slice(0, variables).join("AAA"))
+            let resultNew = Array.from(new Set(resultZboubNew)).map(el => el.split("AAA"));
+            resultNew = resultNew.filter((el, indexOutter) => {
+                let isValid = 0;
+                el.forEach((elInner, index) => {
+                    if (elInner.includes("index" + index)) {
+                        isValid++;
+                    }
+                })
+                return el.length == isValid;
+            })
+            return resultNew;
+        }
+
+              const permutator = (inputArr , variable ) => {
+                    let result = [];
+                    const permute = (arr, m = []) => {
+                        if (arr.length === 0 || m.length == variable  ) {
+                            result.push(m)
+                        } else {
+                            for (let i = 0; i < arr.length; i++) {
+                                let curr = arr.slice();
+                                let next = curr.splice(i, 1);
+                                // TODO TEST
+                                    let isValid = 0;
+                                    m.forEach((elInner, index) => {
+                                        if (elInner.includes("index" + index)) {
+                                            isValid++;
+                                        }
+                                    })
+                                if(!m[0] || isValid == m.length && m.length <= variable )
+                                    permute(curr.slice(), m.concat(next))
+                            }
+                        }
+                    }
+
+                    permute(inputArr)
+                    return result;
+                }
+
+
+                
+   console.time("answer time");
+
+        let result = permutator(arr , arrTotal.length);
+        // MODIFIED RESULT
+        let resultModified =   modify(result ,  arrTotal.length )
+        console.log("MODIFIED_RESULT" ,  resultModified)
+
+
+
+
+
+  
+// FINAL RESULT AND TRANSLATED
+    resultModified.forEach((arr ,  index)=>{
+        let obj = {}
+        Object.keys(inputObj).forEach((key ,  index)=>{
+            obj[key] = arr[index]
+        })
+
+        console.log("OBJ" ,  obj)
+
+        // if(index < 10 )
+        // {
+        //     let worker = new Worker("exampleWorker.js" ,   { type: "module" });
+        //     let arrTranslated = arr.map(el => alias[el])
+        //     console.log("ARR_TRANSLAED", arrTranslated)
+        //     worker.postMessage(arrTranslated);
+
+        //     worker.onmessage = function (event) {
+        //         console.log("RESULT WEB WORKER", event.data);
+        //     };
+        // }
+
+        // call webworker  and set varaibles 
+        
+    })
+
+// ADD WEBWORKERS
+
+
+
+  console.timeLog("answer time");
+    // let finalResult =  modify(result)
+    // console.log("FINAL_RESULT" ,  finalResult)
+
+// TODO FINSH
+
+  
+
+
+
+
+      
+
+
+
+
+
+    </script>
+    
+</body>
+</html>

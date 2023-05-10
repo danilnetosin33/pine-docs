@@ -1,127 +1,6 @@
-const calculateProfit = require("./pine_to_js_api");
-
-const {
-  Worker,
-  isMainThread,
-  parentPort,
-  workerData,
-} = require("node:worker_threads");
-
-const bodyParser = require("body-parser");
-const path = require("path");
-var express = require("express"),
-  app = express(),
-  port = 4020;
-app.use(express.json());
-app.use(bodyParser.json({ extended: true }));
-app.listen(port);
-app.use(express.static(__dirname));
-app.use(express.static("assets"));
-app.use(express.static("frontend"));
-
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/frontend/index.html");
-});
-
-app.post("/calculate", function (req, res) {
-  let settings = req.body;
-  // console.log("SETTINGS", settings);
-  // GET BARS DATA
-  let path = `./assets/JSON/${settings.dataSettings.symbol}/test.json`;
-  let bars_data = require(path);
-  // TODO FILTER DATE RANGE
-
-  let configSettings = {
-    barsClose: settings.configSettings.barsClose,
-    barsCloseReversal: settings.configSettings.barsCloseReversal,
-    barsIgnore: settings.configSettings.barsIgnore,
-    profitPercantage: settings.configSettings.profitPercantage,
-  };
-
-  // BUILD ALL CASES PARAMS
-  let fullResult = buildParams(configSettings);
-  let arrParams = fullResult.resultModified;
-  let alias = fullResult.alias;
-
-  let results = [];
-
-  // PREPARE OBJECT
-
-  arrParams.forEach((arr, indexOutter) => {
-    if (true || indexOutter < 10) {
-      let worker = new Worker("./exampleWorker.js", { workerData: "heloo" });
-      let arrTranslated = arr.map((el) => alias[el]);
-      //  console.log("ARR_TRANSLAED", arrTranslated);
-
-      let obj = {};
-      Object.keys(configSettings).forEach((key, index) => {
-        obj[key] = arrTranslated[index];
-      });
-
-      // console.log("OBJJJ", obj);
-
-      obj.bars = bars_data;
-
-      //  worker.postMessage(obj);
-
-      results.push(runScript(obj));
-
-      // TODO FINISH WITH WORKERS
-
-      // worker.on("message", (msg) => {
-      //   console.log(msg);
-      // });
-
-      // worker.once("message", (message) => {
-      //   console.log(message); // Prints 'Hello, world!'.
-      // });
-      // worker.postMessage("Hello, world!");
-
-      // worker.onmessage = function (event) {
-      //   // console.log("RESULT WEB WORKER", event.data);
-      // };
-    }
-
-    // call webworker  and set varaibles
-  });
-
-  console.log("RESULTS__", results.length);
-
-  res.json(results);
-
-  //res.status(200).send(results.length);
-  //res.sendStatus(200);
-});
-
-// TODO FINISH
-// FINAL RESULT AND TRANSLATED
-// resultModified.forEach((arr, index) => {
-//   if (index < 10) {
-//     let worker = new Worker("exampleWorker.js", { type: "module" });
-//     let arrTranslated = arr.map((el) => alias[el]);
-//     console.log("ARR_TRANSLAED", arrTranslated);
-//     worker.postMessage(arrTranslated);
-
-//     worker.onmessage = function (event) {
-//       console.log("RESULT WEB WORKER", event.data);
-//     };
-//   }
-
-//   // call webworker  and set varaibles
-// });
-
-// if (
-//   Object.keys(settings.dataSettings).length > 0 &&
-//   Object.keys(settings.configSettings).length > 0
-// ) {
-//   // TODO :::  forEach for all cases of ranges run calculateProfit
-//   calculateProfit(settings.dataSettings, settings.configSettings);
-// }
-
-let runScript = (config) => {
-  //console.log("CONFIG", config.barsCloseReversal);
-  //console.log("CONFIG", config);
-
+let runScript = async (config) => {
+  console.log("CONFIG", config);
+  return;
   // --> line 128 START
   // Think that problem is : enter several times in close conditions
 
@@ -137,16 +16,18 @@ let runScript = (config) => {
 
   // Config settings
   let orderCall = "Both";
-  let barsCloseReversal = config.barsCloseReversal || 5;
-  let barsClose = config.barsClose || 5;
-  let barsIgnore = config.barsIgnore || 5;
-  let profitPercantage = config.profitPercantage || 5;
+  let barsCloseReversal = config[0] || 5;
+  let barsClose = config[1] || 5;
+  let barsIgnore = config[2] || 5;
+  let profitPercantage = config[3] || 5;
   let order = 1000;
 
   // let bars_data = require(`./assets/JSON/${symbol}/${symbol}, ${timeframe}.json`);
 
-  //let path = `./assets/JSON/${symbol}/test.json`;
-  let bars_data = config.bars;
+  let path = `./assets/JSON/${symbol}/test.json`;
+  let bars_data = await import(path);
+
+  console.log("BARS_DATA", bars_data.length);
 
   bars_data = bars_data.reverse();
 
@@ -703,119 +584,22 @@ let runScript = (config) => {
       closed.unclosed += 1;
     }
   });
-  // console.log("All orders :", arrayStatistics.length);
-  // console.log("PROFIT : ", profit);
-  // console.log("Orders status: ", closed);
-  console.log("ORDRS", arrayStatistics.length);
-  delete config["bars"];
-  return { profit, orders: arrayStatistics.length, ...config };
+  console.log("All orders :", arrayStatistics.length);
+  console.log("PROFIT : ", profit);
+  console.log("Orders status: ", closed);
+  return profit;
 };
 
-function buildParams(params) {
-  let inputObj = params || {
-    var1: [2, 3, 4, 5, 6, 7, 8],
-    var2: [2, 3, 4, 5, 6, 7, 8],
-    var3: [2, 3, 4, 5, 6, 7, 8],
-    var4: [2, 3, 4, 5, 6, 7, 8],
-  };
-
-  // let var1 = [2,3,4,5,6,7,8]
-  // let var2 = [2, 3, 4, 5, 6, 7, 8]
-  // let var3 = [2, 3, 4, 5, 6, 7, 8]
-  // let var4 = [2, 3, 4, 5, 6, 7, 8]
-  let arrTotal = [];
-  Object.keys(inputObj).forEach((key) => {
-    arrTotal.push(inputObj[key]);
-  });
-
-  //console.log("ARR_TOTAL", arrTotal);
-
-  let fillAlias = (arrOfArray) => {
-    let resultArr = [];
-    let alias = {};
-    arrOfArray.forEach((arr, indexOutter) => {
-      arr.forEach((el, indexInner) => {
-        resultArr.push(`index${indexOutter}_${indexInner}`);
-        alias[`index${indexOutter}_${indexInner}`] = el;
-      });
-    });
-    return { resultArr, alias };
-  };
-
-  let arrFull = fillAlias(arrTotal);
-  //console.log("ARRAY_FULL", arrFull);
-  let arr = arrFull.resultArr;
-  let alias = arrFull.alias;
-
-  let modify = (originalArr, variables) => {
-    let resultZboubNew = originalArr.map((el) =>
-      el.slice(0, variables).join("AAA")
-    );
-    let resultNew = Array.from(new Set(resultZboubNew)).map((el) =>
-      el.split("AAA")
-    );
-    resultNew = resultNew.filter((el, indexOutter) => {
-      let isValid = 0;
-      el.forEach((elInner, index) => {
-        if (elInner.includes("index" + index)) {
-          isValid++;
-        }
-      });
-      return el.length == isValid;
-    });
-    return resultNew;
-  };
-
-  const permutator = (inputArr, variable) => {
-    let result = [];
-    const permute = (arr, m = []) => {
-      if (arr.length === 0 || m.length == variable) {
-        result.push(m);
-      } else {
-        for (let i = 0; i < arr.length; i++) {
-          let curr = arr.slice();
-          let next = curr.splice(i, 1);
-          // TODO TEST
-          let isValid = 0;
-          m.forEach((elInner, index) => {
-            if (elInner.includes("index" + index)) {
-              isValid++;
-            }
-          });
-          if (!m[0] || (isValid == m.length && m.length <= variable))
-            permute(curr.slice(), m.concat(next));
-        }
-      }
-    };
-
-    permute(inputArr);
-    return result;
-  };
-
-  console.time("answer time");
-
-  let result = permutator(arr, arrTotal.length);
-  // MODIFIED RESULT
-  let resultModified = modify(result, arrTotal.length);
-  // console.log("MODIFIED_RESULT", resultModified);
-
-  // FINAL RESULT AND TRANSLATED
-  // resultModified.forEach((arr, index) => {
-  //   if (index < 10) {
-  //     let worker = new Worker("exampleWorker.js", { type: "module" });
-  //     let arrTranslated = arr.map((el) => alias[el]);
-  //     console.log("ARR_TRANSLAED", arrTranslated);
-  //     worker.postMessage(arrTranslated);
-
-  //     worker.onmessage = function (event) {
-  //       console.log("RESULT WEB WORKER", event.data);
-  //     };
+onmessage = function (e) {
+  // postMessage("HELOO");
+  // TODO UNCOMMENT
+  // runScript(e.data);
+  //   const result = e.data[0] * e.data[1];
+  //   if (isNaN(result)) {
+  //     postMessage("Please write two numbers");
+  //   } else {
+  //     const workerResult = "Result: " + result;
+  //     console.log("Worker: Posting message back to main script");
+  //     postMessage(workerResult);
   //   }
-
-  //   // call webworker  and set varaibles
-  // });
-
-  // ADD WEBWORKERS
-
-  return { resultModified, alias };
-}
+};

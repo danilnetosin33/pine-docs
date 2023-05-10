@@ -6,7 +6,9 @@ let symbol = "AAPL";
 let timeframe = "1D";
 
 // Config settings
-let orderCall = "Both";
+let orderCall = "Short Only";
+
+//"Both";
 let barsCloseReversal = 5;
 let barsClose = 5;
 let barsIgnore = 5;
@@ -16,21 +18,31 @@ let order = 1000;
 let bars_data = require(`./assets/JSON/${symbol}/${symbol}, ${timeframe}.json`);
 bars_data = bars_data.reverse();
 
-//1356991200000 -  01.01.2013
-//1388527200000 - 01.01.2014
-//1420063200000 - 01.01.2015
+let delta = 0; // Math.abs(bars_data[0].time - bars_data[1].time);
 
-//1451599200000 - 01.01.2016
-//1483221600000 - 01.01.2017
-//1514757600000 - 01.01.2018
-//1546293600000 - 01.01.2019
-//1577829600000 - 01.01.2020
-//1609452000000 - 01.01.2021
-//1640988000000 - 01.01.2022
+//1356991200000 -  01.01.2013
+//1388527200000 - 01.01.2014 +
+//1420063200000 - 01.01.2015 +
+
+//1451599200000 - 01.01.2016 +
+//1483221600000 - 01.01.2017 +
+//1514757600000 - 01.01.2018 +
+//1546293600000 - 01.01.2019 +
+//1577829600000 - 01.01.2020 +
+//1609452000000 - 01.01.2021 +
+//1640988000000 - 01.01.2022 +
 //1672524000000 - 01.01.2023
 
 bars_data = bars_data.filter(
-  (el) => +el.time + "000" >= 1356991200000 && +el.time + "000" < 1672524000000
+  (el) =>
+    +el.time + "000" >= 1356991200000 - delta * 2000 &&
+    +el.time + "000" < 1672524000000
+);
+
+console.log(
+  "BARS_DATA",
+
+  new Date(+(bars_data[0].time + "000")).toDateString()
 );
 
 let low = bars_data.map((el) => el.low);
@@ -145,51 +157,24 @@ function filterByExitSignalFunc(arrayBla, value) {
 /// START
 bars_data.forEach((bar, bar_index) => {
   if (bar_index < 1) return;
-  bearishReversal =
+  let bearishReversal =
     (orderCall == "Both" || orderCall == "Long Only") &&
     high[bar_index] > high[bar_index - 1] &&
     close[bar_index] < close[bar_index - 1];
-  bullishReversal =
+  let bullishReversal =
     (orderCall == "Both" || orderCall == "Short Only") &&
     low[bar_index] < low[bar_index - 1] &&
     close[bar_index] > close[bar_index - 1];
-  bullish_TAR =
+  let bullish_TAR =
     (orderCall == "Both" || orderCall == "Long Only") &&
     low[bar_index - 1] < low[bar_index - 2] &&
     close[bar_index - 1] > close[bar_index - 2] &&
     high[bar_index] > high[bar_index - 1];
-  bearish_TAR =
+  let bearish_TAR =
     (orderCall == "Both" || orderCall == "Short Only") &&
     high[bar_index - 1] > high[bar_index - 2] &&
     close[bar_index - 1] < close[bar_index - 2] &&
     low[bar_index] < low[bar_index - 1];
-
-  //LONG
-  if (
-    low[bar_index] < low[bar_index - 1] &&
-    close[bar_index] > close[bar_index - 1]
-  ) {
-    let reversal_bar_long = {
-      barIndex: bar_index,
-      barLow: low[bar_index],
-      barHigh: high[bar_index],
-      isOutter: true,
-    };
-    lastReversalBarsLong.push(reversal_bar_long);
-  }
-  if (lastReversalBarsLong.length > 0) {
-    let temp_el = lastReversalBarsLong[lastReversalBarsLong.length - 1];
-    temp_el.isOutter = temp_el.barLow > low[bar_index];
-    // last_bar_index - temp_el.barIndex > barsCloseReversal
-
-    if (bar_index - temp_el.barIndex < barsCloseReversal) {
-      lastReversalBarsLong = [];
-    } else if (temp_el.barHigh < high[bar_index]) {
-      bullish_TAR = true;
-      lastReversalBarsLong = [];
-    }
-  }
-
   //SHORT
   if (
     high[bar_index] > high[bar_index - 1] &&
@@ -226,29 +211,6 @@ bars_data.forEach((bar, bar_index) => {
         arrayStatistics[arrayStatistics.length - 1].barIndex + barsIgnore
       : true;
 
-  // LONG
-  // inDateRange && condBarsIgnore
-  if (bullish_TAR && condBarsIgnore) {
-    let countEntryPrice =
-      open[bar_index] > high[bar_index - 1]
-        ? open[bar_index]
-        : high[bar_index - 1];
-    entryPriceLong.push(countEntryPrice);
-    entryBarindexLong.push(bar_index);
-    entryPriceDisplayLong.push(countEntryPrice);
-    let addItem = {
-      entrySignal: "BullTAR",
-      barIndex: bar_index,
-      exitPrice: null,
-      timeEnter: time[bar_index],
-      timeTransformed: new Date(+(time[bar_index] + "000")).toDateString(),
-      initPrice: countEntryPrice,
-      id: arrayStatistics.length + 1,
-    };
-    arrayStatistics.push(addItem);
-    lastLow = low[bar_index - 1];
-    countOpened += 1;
-  }
   // SHORT
   //  inDateRange && condBarsIgnore
   if (bearish_TAR && condBarsIgnore) {
@@ -258,6 +220,13 @@ bars_data.forEach((bar, bar_index) => {
         : low[bar_index - 1];
 
     entryPriceShort.push(countEntryPrice);
+    console.log(
+      "ENTER_PRICE",
+      bar_index,
+      countEntryPrice,
+      entryPriceShort[entryPriceShort.length - 1]
+    );
+
     entryPriceDisplayShort.push(countEntryPrice);
     entryBarindexShort.push(bar_index);
     let addItem = {
@@ -275,39 +244,6 @@ bars_data.forEach((bar, bar_index) => {
   }
 
   //CLOSED BY SL
-  //LONG
-  if (low[bar_index] < lastLow && entryBarindexLong.length > 0) {
-    closedBySL = true;
-    if (
-      entryPriceLong.length > 0 &&
-      bar_index > entryBarindexLong[entryBarindexLong.length - 1]
-    ) {
-      entryPriceLong.forEach((el, index) => {
-        countClosedBySLLong += 1;
-        let elIndex = findIndexByBarIndex(
-          arrayStatistics,
-          entryBarindexLong[index]
-        );
-
-        if (elIndex != -1) {
-          arrayStatistics[elIndex] = {
-            ...arrayStatistics[elIndex],
-            timeExit: time[bar_index],
-            signalExit: "SL",
-            exitPrice: lastLow,
-            profit: countTakeProfitPerTrade(
-              arrayStatistics[elIndex].initPrice,
-              lastLow,
-              order
-            ),
-            barIndexExit: bar_index,
-          };
-        }
-      });
-      entryPriceLong = [];
-      entryBarindexLong = [];
-    }
-  }
   // SHORT
   if (high[bar_index] > lastHigh && entryBarindexShort.length > 0) {
     closedBySL = true;
@@ -343,38 +279,6 @@ bars_data.forEach((bar, bar_index) => {
   }
 
   // CLOSED BY REVERSAL
-  // LONG
-  if (bearishReversal) {
-    if (entryPriceLong.length > 0) {
-      entryPriceLong.forEach((el, index) => {
-        if (
-          bar_index - entryBarindexLong[entryBarindexLong.length - 1] >
-          barsCloseReversal
-        ) {
-          closeByReversal = true;
-          countClosedByBearishReversal += 1;
-          let elIndex = findIndexByBarIndex(
-            arrayStatistics,
-            entryBarindexLong[index]
-          );
-          arrayStatistics[elIndex] = {
-            ...arrayStatistics[elIndex],
-            timeExit: time[bar_index],
-            signalExit: "Reversal",
-            exitPrice: low[bar_index - 1],
-            profit: countTakeProfitPerTrade(
-              arrayStatistics[elIndex].initPrice,
-              low[bar_index - 1],
-              order
-            ),
-            barIndexExit: bar_index,
-          };
-          entryPriceLong.splice(index, 1);
-          entryBarindexLong.splice(index, 1);
-        }
-      });
-    }
-  }
   // SHORT
   if (bullishReversal) {
     if (entryPriceShort.length > 0) {
@@ -384,6 +288,12 @@ bars_data.forEach((bar, bar_index) => {
           barsCloseReversal
         ) {
           closeByReversal = true;
+          totalProfit +=
+            countTakeProfitPerTrade(
+              entryPriceShort[index],
+              high[bar_index - 1],
+              order
+            ) * -1;
           countClosedByBearishReversal += 1;
           let elIndex = findIndexByBarIndex(
             arrayStatistics,
@@ -396,7 +306,7 @@ bars_data.forEach((bar, bar_index) => {
             exitPrice: high[bar_index - 1],
             profit:
               countTakeProfitPerTrade(
-                arrayStatistics[elIndex].initPrice,
+                entryPriceShort[index],
                 high[bar_index - 1],
                 order
               ) * -1,
@@ -410,40 +320,6 @@ bars_data.forEach((bar, bar_index) => {
   }
 
   //CLOSED BY  TAKE PROFIT BY PERCENTAGE
-  //LONG
-  if (entryPriceLong.length > 0) {
-    for (let index = entryPriceLong.length - 1; index >= 0; index--) {
-      let TP_price =
-        entryPriceLong[entryPriceLong.length - 1] *
-        ((100 + profitPercantage) / 100);
-      if (
-        TP_price <= close[bar_index] &&
-        bar_index > entryBarindexLong[entryBarindexLong.length - 1]
-      ) {
-        countClosedByProfitLong += 1;
-        closedByTP = true;
-
-        let elIndex = findIndexByBarIndex(
-          arrayStatistics,
-          entryBarindexLong[index]
-        );
-        arrayStatistics[elIndex] = {
-          ...arrayStatistics[elIndex],
-          timeExit: time[bar_index],
-          signalExit: "TP",
-          exitPrice: TP_price,
-          profit: countTakeProfitPerTrade(
-            arrayStatistics[elIndex].initPrice,
-            TP_price,
-            order
-          ),
-          barIndexExit: bar_index,
-        };
-        entryPriceLong.splice(index, 1);
-        entryBarindexLong.splice(index, 1);
-      }
-    }
-  }
   //SHORT
   if (entryPriceShort.length > 0) {
     for (let index = entryPriceShort.length - 1; index >= 0; index--) {
@@ -451,10 +327,22 @@ bars_data.forEach((bar, bar_index) => {
         (entryPriceShort[entryPriceShort.length - 1] *
           (100 - profitPercantage)) /
         100;
+
+      //   console.log(
+      //     "******",
+      //     bar_index,
+      //     "TP PRICE",
+      //     TP_price,
+      //     low[bar_index],
+      //     "cond2",
+      //     bar_index > entryBarindexShort[entryBarindexShort.length - 1]
+      //   );
+
       if (
         TP_price >= low[bar_index] &&
         bar_index > entryBarindexShort[entryBarindexShort.length - 1]
       ) {
+        console.log("TP_SHORT", bar_index);
         countClosedByProfitShort += 1;
         closedByTP = true;
         let elIndex = findIndexByBarIndex(
@@ -483,46 +371,20 @@ bars_data.forEach((bar, bar_index) => {
   }
 
   // CLOSED BY BAR INDEX
-  //LONG
-  if (entryBarindexLong.length > 0 && entryPriceLong.length > 0) {
-    for (let index = entryBarindexLong.length - 1; index >= 0; index--) {
-      if (entryPriceLong.length > 0) {
-        if (
-          bar_index - barsClose >=
-          entryBarindexLong[entryBarindexLong.length - 1]
-        ) {
-          countClosedByBarCount += 1;
-          closedByBars = true;
-          let elIndex = findIndexByBarIndex(
-            arrayStatistics,
-            entryBarindexLong[index]
-          );
-          arrayStatistics[elIndex] = {
-            ...arrayStatistics[elIndex],
-            timeExit: time[bar_index],
-            signalExit: "Bars",
-            exitPrice: open[bar_index],
-            profit: countTakeProfitPerTrade(
-              arrayStatistics[elIndex].initPrice,
-              open[bar_index],
-              order
-            ),
-            barIndexExit: bar_index,
-          };
-          entryPriceLong.splice(index, 1);
-          entryBarindexLong.splice(index, 1);
-        }
-      }
-    }
-  }
   //SHORT
   if (entryBarindexShort.length > 0 && entryPriceShort.length > 0) {
     for (let index = entryBarindexShort.length - 1; index >= 0; index--) {
       if (entryPriceShort.length > 0) {
+        // bar_index -   entryBarindexShort[entryBarindexShort.length - 1] < barsClose
         if (
           bar_index - barsClose >=
           entryBarindexShort[entryBarindexShort.length - 1]
         ) {
+          console.log(
+            "BAR_CLOSE",
+            bar_index - barsClose,
+            entryBarindexShort[entryBarindexShort.length - 1]
+          );
           countClosedByBarCount += 1;
           closedByBars = true;
           let elIndex = findIndexByBarIndex(
@@ -556,8 +418,10 @@ bars_data.forEach((bar, bar_index) => {
 let profit = 0;
 let unclosed_arr = [];
 let closed = { unclosed: 0 };
-arrayStatistics.forEach((el) => {
-  if (el.profit && el.profit != null) {
+arrayStatistics.forEach((el, index) => {
+  console.log("ELEMENT", el);
+  if ((el.profit || el.profit == 0) && el.profit !== null) {
+    // console.log(`Profit Order ${index + 1} :::`, el.profit);
     profit += el.profit;
     if (!closed[el.signalExit]) {
       closed[el.signalExit] = 0;

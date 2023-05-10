@@ -16,12 +16,13 @@
         <div class="mb-2 d-grid col-8 mx-auto"  id="dataSettings"></div>
         <div class="mb-2 d-grid col-8 mx-auto" id="configSettings"></div>
         <button id="btn_calculate" class="mb-2 d-grid col-8 mx-auto btn btn-primary" > CALCULATE </button>
+        <div id="table-example"></div>
     </div>
     
 
 
       <div id="content" style="max-height:80vh;overflow: auto;">
-        Here will be data
+        Here will be data!!
       </div>
     
     <script>
@@ -37,18 +38,50 @@
                 }
                 else{
                     data = {            
-                        dataSettings: { symbol: 'AAPL', timeframe: '1D' },
+                        dataSettings: {
+                            "symbol": "AAPL",
+                            "timeframe": "1H",
+                            "date": {
+                                "from": "2023-01-10",
+                                "to": "2023-04-12"
+                            }
+                        },
                         configSettings: {
-                            orderCall: 'botn',
-                            barsClose: [ 0, 1 ],
-                            barsCloseReversal: [ 0, 1, 2 ],
-                            barsIgnore: [ 0, 1, 2, 3 ],
-                            profitPercantage: [ 0, 1, 2, 3, 4 ]
+                            "orderCall": "botn",
+                            "barsClose": [
+                                2,
+                                3,
+                                4,
+                                5,
+                                6
+                            ],
+                            "barsCloseReversal": [
+                                2,
+                                3,
+                                4,
+                                5,
+                                6
+                            ],
+                            "barsIgnore": [
+                                2,
+                                3,
+                                4,
+                                5,
+                                6
+                            ],
+                            "profitPercantage": [
+                                2,
+                                3,
+                                4,
+                                5,
+                                6
+                            ]
                         }
                 }
             }
 
             
+            console.log("RESULT")
             fetch("/calculate", 
             {
                 method:"POST", 
@@ -56,9 +89,36 @@
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify(data)
-            })
+            }).then((response) => {
+                  console.log("RESULT2")
+                    return response.json();
+                })
+                .then((data) => {
+                    console.log("DATA" ,  data);
+                    data = data.sort((a, b) => b.profit - a.profit)
+                    window.tableExample.set("result" ,  data)
+              
+                    // Ractive.defaults.data.
+                });
         }
     
+
+window.tableExample  = new Ractive({
+          el: "#table-example",
+          data : {result : []},
+          template:`HELOO
+{{#each result}}
+<div>PROFIT : {{profit}} ORDERS : {{orders}} </div>
+ <!-- "profit":-301.5537403165889,"orders":318,"barsClose":2,"barsCloseReversal":2,"barsIgnore":2,"profitPercantage":2 -->
+{{/each}}
+
+          `
+
+
+})
+
+
+
 
         let dataRactive = new Ractive({
             el: "#dataSettings",
