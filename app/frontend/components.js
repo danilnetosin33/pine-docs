@@ -140,6 +140,12 @@ Ractive.components["select-input"] = Ractive.extend({
   },
 });
 Ractive.components["date-input"] = Ractive.extend({
+  data: {
+    values: {
+      from: "2013-01-01",
+      to: "2023-01-01",
+    },
+  },
   template: `
     {{#if config.range}}
     <label class="form-label" >{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }} {{/if}}</label>
@@ -161,8 +167,6 @@ Ractive.components["date-input"] = Ractive.extend({
       window[this.parent.get("global_variable")] = {};
     }
     window.comp_range = this;
-    this.set("values", {});
-
     this.observe("values", (newValue, oldValue) => {
       if (newValue.to) {
         window[this.parent.get("global_variable")][this.get("config.field")] =

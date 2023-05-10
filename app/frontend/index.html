@@ -8,6 +8,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js" integrity="sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js" integrity="sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/ractive"></script>
+    <script src="https://kit.fontawesome.com/e45f08485e.js" crossorigin="anonymous"></script>
     <script src="./components.js"></script>
     <title>Example UI</title>
 </head>
@@ -16,14 +17,12 @@
         <div class="mb-2 d-grid col-8 mx-auto"  id="dataSettings"></div>
         <div class="mb-2 d-grid col-8 mx-auto" id="configSettings"></div>
         <button id="btn_calculate" class="mb-2 d-grid col-8 mx-auto btn btn-primary" > CALCULATE </button>
-        <div id="table-example"></div>
+        
     </div>
     
-
-
-      <div id="content" style="max-height:80vh;overflow: auto;">
-        Here will be data!!
-      </div>
+    <div id="content" style="max-height:80vh;overflow: auto;">
+        <div id="table-profit"></div>
+    </div>
     
     <script>
         // CALCULATE CALL
@@ -31,9 +30,10 @@
 
 
         // !!! don`t need to fill forms --> have default settings obj (for testing)
-        btn_calculate.onclick = ()=>{
+        btn_calculate.onclick = (ev)=>{
+            ev.target.disabled = true
             let data = {}
-                if(Object.keys(window.DATA_SETTINGS).length > 0 && Object.keys(window.CONFIG_SETTINGS).length > 0){
+                if(Object.keys(window.DATA_SETTINGS).length == 3 && Object.keys(window.CONFIG_SETTINGS).length == 5){
                    data = { dataSettings: window.DATA_SETTINGS, configSettings:window.CONFIG_SETTINGS}
                 }
                 else{
@@ -42,40 +42,16 @@
                             "symbol": "AAPL",
                             "timeframe": "1H",
                             "date": {
-                                "from": "2023-01-10",
-                                "to": "2023-04-12"
+                                "from": "2013-01-01",
+                                "to": "2023-01-01"
                             }
                         },
                         configSettings: {
-                            "orderCall": "botn",
-                            "barsClose": [
-                                2,
-                                3,
-                                4,
-                                5,
-                                6
-                            ],
-                            "barsCloseReversal": [
-                                2,
-                                3,
-                                4,
-                                5,
-                                6
-                            ],
-                            "barsIgnore": [
-                                2,
-                                3,
-                                4,
-                                5,
-                                6
-                            ],
-                            "profitPercantage": [
-                                2,
-                                3,
-                                4,
-                                5,
-                                6
-                            ]
+                            "orderCall": "Both",
+                            "barsClose": [2,3,4,5,6],
+                            "barsCloseReversal":[2,3,4,5,6],
+                            "barsIgnore":[2,3,4,5,6],
+                            "profitPercantage": [2,3,4,5,6]
                         }
                 }
             }
@@ -90,35 +66,130 @@
                 },
                 body: JSON.stringify(data)
             }).then((response) => {
-                  console.log("RESULT2")
                     return response.json();
                 })
                 .then((data) => {
                     console.log("DATA" ,  data);
-                    data = data.sort((a, b) => b.profit - a.profit)
-                    window.tableExample.set("result" ,  data)
-              
-                    // Ractive.defaults.data.
+                    // data = data.sort((a, b) => b.profit - a.profit)
+                    window.tableProfit.set("fullData" ,  data)
+                    
+                    ev.target.disabled = false
                 });
         }
     
 
-window.tableExample  = new Ractive({
-          el: "#table-example",
-          data : {result : []},
-          template:`HELOO
-{{#each result}}
-<div>PROFIT : {{profit}} ORDERS : {{orders}} </div>
- <!-- "profit":-301.5537403165889,"orders":318,"barsClose":2,"barsCloseReversal":2,"barsIgnore":2,"profitPercantage":2 -->
-{{/each}}
+window.tableProfit  = new Ractive({
+        el: "#table-profit",
+        data : {
+            selectConfig:{field:"symbol", options:[{value:"",text:"Select symbol..."},"AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
+            currentData:[],
+            currentPage:0,
+            currentPageData:[],
+            filterState:{profit:true}},
+        template:`
+        {{#if fullData}}
+            <div style="width:30%">
+                <select-input config={{selectConfig}} value={{symbolValue}} />
+            </div>
+        {{/if}}
+        {{#if currentPageData.length>0 && symbolValue && symbolValue != "" }}
+         <table class="table table-hover table-bordered caption-top ">
+                <caption>
+                    <div>Orders call : {{currentData[0].orderCall}}</div>
+                    <div>Dates : {{@global.DATA_SETTINGS.date.from}} - {{@global.DATA_SETTINGS.date.to}}</div>
+                </caption>
+   
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" on-click=@this.filterData("profit") ><div style="display:flex;justify-content:space-between"><span>Profit</span><span>{{#if filterState.profit}}<i class="fa-solid fa-arrow-up"></i> {{else}} <i class="fa-solid fa-arrow-down"></i>{{/if}}</span></div></th>
+                        <th scope="col">Orders</th>
+                        <th scope="col">Bars</th>
+                        <th scope="col">Bars (Reversal)</th>
+                        <th scope="col">Bars ignore</th>
+                        <th scope="col">Profit %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each currentPageData}}
+                        <tr>
+                            <td>{{profit}}</td>
+                            <td>{{orders}}</td>
+                            <td>{{barsClose}}</td>
+                            <td>{{barsCloseReversal}}</td>
+                            <td>{{barsIgnore}}</td>
+                            <td>{{profitPercantage}}</td>  
+                        </tr> 
+                    {{/each}}
+                </tbody>
+            </table>
 
-          `
+            <nav>
+                <ul class="pagination justify-content-center ">
+                    <li class="page-item {{#if currentPage == 0}}disabled{{/if}}" on-click="@this.prevPage()"><span class="page-link">Previous</span></li>
+                    <li class="page-item"><input class="form-control" type="number" value={{currentPage}} on-blur="@this.changePage()" /></li>
+                    <li class="page-item {{#if currentPage == Math.floor(currentData.length/10)}}disabled{{/if}} " on-click="@this.nextPage()" ><span class="page-link" href="#">Next</span></li>
+                </ul>
+            </nav>
+        {{/if}}
 
+
+        `,
+        filterData:function(param){
+            let currentData = this.get("currentData")
+            if(this.get("filterState")[param]){
+                currentData = currentData.sort((a, b) => a.profit - b.profit)
+            }
+            else{
+                currentData = currentData.sort((a, b) => b.profit - a.profit)
+            }
+            this.set("currentData", currentData)
+            this.set(`filterState.${param}`, !this.get("filterState")[param])
+        },
+        prevPage:function(){
+            let current = this.get("currentPage");
+            if(current > 0){
+                this.set("currentPage", current-1)
+                this.getCurrentPageData(this.get("currentPage"))
+            }     
+        },
+        nextPage:function(){
+            let current = this.get("currentPage");
+            if(current < Math.floor(this.get("currentData").length/10) ){
+                this.set("currentPage", current+1)
+                this.getCurrentPageData(this.get("currentPage"))
+            }  
+        },
+        changePage:function(){
+            let current = this.get("currentPage");
+            if(current > 0 && current < Math.floor(this.get("currentData").length/10)){
+                this.getCurrentPageData(current)
+            }
+            else{
+                // TODO return to available range ??
+            }
+        },
+        oncomplete:function(){
+            this.getCurrentPageData = function(page){
+                let currentData = this.get("currentData")
+                let indexStart = page*10
+                let indexEnd = indexStart + 10 // +1 because slice don`t include last index
+                let newCurrentData = currentData.slice(indexStart, indexEnd)
+                this.set("currentPageData" , newCurrentData)
+            }
+            this.observe("symbolValue",(newValue,oldValue)=>{
+                if(newValue != oldValue){
+                    this.set("currentData" , this.get("fullData")[newValue] || [])
+                    this.set("currentPage", 0)
+                }
+            })
+            this.observe("currentData" , (newValue,oldValue)=>{
+                console.log("CHANGE_DATA",newValue)
+                this.getCurrentPageData(this.get("currentPage"))
+            })
+
+        }
 
 })
-
-
-
 
         let dataRactive = new Ractive({
             el: "#dataSettings",
@@ -157,7 +228,7 @@ window.tableExample  = new Ractive({
                     {field:"barsCloseReversal", label:"Minimum Bars", type:"range"},
                     {field:"barsIgnore",label:"Bars Ignore", type:"range"},
                     {field:"profitPercantage",label:"Profit", type:"range", steps:true},
-                    {field:"orderCall",label:"Order Call", type:"select", options:[{value:"botn",text:"Both"},{value:"long",text:"Long Only"},{value:"short",text:"Short Only"}]}
+                    {field:"orderCall",label:"Order Call", type:"select", options:["Both","Long Only","Short Only"]}
                 ]
             },
             template:
@@ -178,10 +249,6 @@ window.tableExample  = new Ractive({
             </div>
             `
         })
-
-
-
-
 
     </script>
 
