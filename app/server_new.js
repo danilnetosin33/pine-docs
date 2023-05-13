@@ -1,5 +1,5 @@
 const calculateProfit = require("./calculateProfit");
-
+const async = require("async");
 const {
   Worker,
   isMainThread,
@@ -26,15 +26,15 @@ app.get("/", (req, res) => {
 app.post("/calculate", function (req, res) {
   let settings = req.body;
   //console.log("SETTINGS", settings);
-  // GET BARS DATA
 
-  let symbols = ["AAPL", "AMZN"]; //, "GOOGL", "MSFT", "NVDA", "TSLA"
+  // GET BARS DATA
+  let symbols = ["AAPL", "AMZN", "GOOGL", "MSFT", "NVDA", "TSLA"];
   let allSymbolsBars = {};
 
   symbols.forEach((symbol) => {
     let path = `./assets/JSON/${symbol}/${symbol}, ${settings.dataSettings.timeframe}.json`;
     let bars_data = require(path);
-    //FILTER DATE RANGE
+    //FILTER BARS BY DATE RANGE
     let date_from = new Date(settings.dataSettings.date.from).getTime();
     let date_to = new Date(settings.dataSettings.date.to).getTime();
     bars_data = bars_data.filter(
@@ -58,15 +58,14 @@ app.post("/calculate", function (req, res) {
 
   //let results = [];
   let results = {};
-  // PREPARE OBJECT
-
+  // PREPARE CASES
   Object.keys(allSymbolsBars).forEach((symbol_bars) => {
     if (!results[symbol_bars]) {
       results[symbol_bars] = [];
     }
-    arrParams.forEach((arr, indexOutter) => {
-      if (true || indexOutter < 10) {
-        let worker = new Worker("./exampleWorker.js", { workerData: "heloo" });
+    async.each(
+      arrParams,
+      (arr) => {
         let arrTranslated = arr.map((el) => alias[el]);
 
         let obj = {};
@@ -80,33 +79,18 @@ app.post("/calculate", function (req, res) {
           bars: allSymbolsBars[symbol_bars],
         };
         results[symbol_bars].push(calculateProfit(obj));
-
-        // TODO FINISH WITH WORKERS
-
-        // worker.on("message", (msg) => {
-        //   console.log(msg);
-        // });
-
-        // worker.once("message", (message) => {
-        //   console.log(message); // Prints 'Hello, world!'.
-        // });
-        // worker.postMessage("Hello, world!");
-
-        // worker.onmessage = function (event) {
-        //   // console.log("RESULT WEB WORKER", event.data);
-        // };
+      },
+      function (err) {
+        if (err) {
+          console.log("Calculation error:", err);
+        } else {
+          console.log("Calculation finished");
+        }
       }
-
-      // call webworker  and set varaibles
-    });
+    );
   });
 
-  console.log("RESULTS__", results.length);
-
   res.json(results);
-
-  //res.status(200).send(results.length);
-  //res.sendStatus(200);
 });
 
 // TODO FINISH

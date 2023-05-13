@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-KK94CHFLLe+nY2dmCWGMq91rCGa5gtU4mk92HdvYe+M/SXH301p5ILy+dN9+nJOZ" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.7/dist/umd/popper.min.js" integrity="sha384-zYPOMqeu1DAVkHiLqWBUTcbYfZ8osu1Nd6Z89ify25QV9guujx43ITvfi12/QExE" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js" integrity="sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ractive"></script>
+    <script src="https://kit.fontawesome.com/e45f08485e.js" crossorigin="anonymous"></script>
+    <script src="./components.js"></script>
+    <title>Example UI</title>
+</head>
+<body>
+    <div class="mt-2">
+        <div class="mb-2 d-grid col-8 mx-auto"  id="dataSettings"></div>
+        <div class="mb-2 d-grid col-8 mx-auto" id="configSettings"></div>
+        <button id="btn_calculate" class="mb-2 d-grid col-8 mx-auto btn btn-primary" > CALCULATE </button>
+        
+    </div>
+    
+    <div id="content" style="max-height:80vh;overflow: auto;">
+        <div id="table-profit"></div>
+    </div>
+    
+    <script>
+        // CALCULATE CALL
+        let btn_calculate = document.getElementById("btn_calculate")
+
+
+        // !!! don`t need to fill forms --> have default settings obj (for testing)
+        btn_calculate.onclick = (ev)=>{
+            ev.target.disabled = true
+            let data = {}
+                if(Object.keys(window.DATA_SETTINGS).length == 3 && Object.keys(window.CONFIG_SETTINGS).length == 5){
+                   data = { dataSettings: window.DATA_SETTINGS, configSettings:window.CONFIG_SETTINGS}
+                }
+                else{
+                    data = {            
+                        dataSettings: {
+                            "symbol": "AAPL",
+                            "timeframe": "1H",
+                            "date": {
+                                "from": "2013-01-01",
+                                "to": "2023-01-01"
+                            }
+                        },
+                        configSettings: {
+                            "orderCall": "Both",
+                            "barsClose": [2,3,4,5,6],
+                            "barsCloseReversal":[2,3,4,5,6],
+                            "barsIgnore":[2,3,4,5,6],
+                            "profitPercantage": [2,3,4,5,6]
+                        }
+                }
+            }
+
+            
+            console.log("RESULT")
+            fetch("/calculate", 
+            {
+                method:"POST", 
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(data)
+            }).then((response) => {
+                    return response.json();
+                })
+                .then((data) => {
+                    console.log("DATA" ,  data);
+                    // data = data.sort((a, b) => b.profit - a.profit)
+                    window.tableProfit.set("fullData" ,  data)
+                    
+                    ev.target.disabled = false
+                });
+        }
+    
+
+window.tableProfit  = new Ractive({
+        el: "#table-profit",
+        data : {
+            selectConfig:{field:"symbol", options:[{value:"",text:"Select symbol..."},"AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
+            currentData:[],
+            currentPage:0,
+            currentPageData:[],
+            filterState:{profit:true}},
+        template:`
+        {{#if fullData}}
+            <div style="width:30%">
+                <select-input config={{selectConfig}} value={{symbolValue}} />
+            </div>
+        {{/if}}
+        {{#if currentPageData.length>0 && symbolValue && symbolValue != "" }}
+         <table class="table table-hover table-bordered caption-top ">
+                <caption>
+                    <div>Orders call : {{currentData[0].orderCall}}</div>
+                    <div>Dates : {{@global.DATA_SETTINGS.date.from}} - {{@global.DATA_SETTINGS.date.to}}</div>
+                </caption>
+   
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col" on-click=@this.filterData("profit") ><div style="display:flex;justify-content:space-between"><span>Profit</span><span>{{#if filterState.profit}}<i class="fa-solid fa-arrow-up"></i> {{else}} <i class="fa-solid fa-arrow-down"></i>{{/if}}</span></div></th>
+                        <th scope="col">Orders</th>
+                        <th scope="col">Bars</th>
+                        <th scope="col">Bars (Reversal)</th>
+                        <th scope="col">Bars ignore</th>
+                        <th scope="col">Profit %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{#each currentPageData}}
+                        <tr>
+                            <td>{{profit}}</td>
+                            <td>{{orders}}</td>
+                            <td>{{barsClose}}</td>
+                            <td>{{barsCloseReversal}}</td>
+                            <td>{{barsIgnore}}</td>
+                            <td>{{profitPercantage}}</td>  
+                        </tr> 
+                    {{/each}}
+                </tbody>
+            </table>
+
+            <nav>
+                <ul class="pagination justify-content-center ">
+                    <li class="page-item {{#if currentPage == 0}}disabled{{/if}}" on-click="@this.prevPage()"><span class="page-link">Previous</span></li>
+                    <li class="page-item"><input class="form-control" type="number" value={{currentPage}} on-blur="@this.changePage()" /></li>
+                    <li class="page-item {{#if currentPage == Math.floor(currentData.length/10)}}disabled{{/if}} " on-click="@this.nextPage()" ><span class="page-link" href="#">Next</span></li>
+                </ul>
+            </nav>
+        {{/if}}
+
+
+        `,
+        filterData:function(param){
+            let currentData = this.get("currentData")
+            if(this.get("filterState")[param]){
+                currentData = currentData.sort((a, b) => a.profit - b.profit)
+            }
+            else{
+                currentData = currentData.sort((a, b) => b.profit - a.profit)
+            }
+            this.set("currentData", currentData)
+            this.set(`filterState.${param}`, !this.get("filterState")[param])
+        },
+        prevPage:function(){
+            let current = this.get("currentPage");
+            if(current > 0){
+                this.set("currentPage", current-1)
+                this.getCurrentPageData(this.get("currentPage"))
+            }     
+        },
+        nextPage:function(){
+            let current = this.get("currentPage");
+            if(current < Math.floor(this.get("currentData").length/10) ){
+                this.set("currentPage", current+1)
+                this.getCurrentPageData(this.get("currentPage"))
+            }  
+        },
+        changePage:function(){
+            let current = this.get("currentPage");
+            if(current > 0 && current < Math.floor(this.get("currentData").length/10)){
+                this.getCurrentPageData(current)
+            }
+            else{
+                // TODO return to available range ??
+            }
+        },
+        oncomplete:function(){
+            this.getCurrentPageData = function(page){
+                let currentData = this.get("currentData")
+                let indexStart = page*10
+                let indexEnd = indexStart + 10 // +1 because slice don`t include last index
+                let newCurrentData = currentData.slice(indexStart, indexEnd)
+                this.set("currentPageData" , newCurrentData)
+            }
+            this.observe("symbolValue",(newValue,oldValue)=>{
+                if(newValue != oldValue){
+                    this.set("currentData" , this.get("fullData")[newValue] || [])
+                    this.set("currentPage", 0)
+                }
+            })
+            this.observe("currentData" , (newValue,oldValue)=>{
+                console.log("CHANGE_DATA",newValue)
+                this.getCurrentPageData(this.get("currentPage"))
+            })
+
+        }
+
+})
+
+        let dataRactive = new Ractive({
+            el: "#dataSettings",
+            data:{
+                global_variable:"DATA_SETTINGS",
+                fields: [
+                    {field:"symbol", type:"select", options:[{value:"",text:"Select symbol..."},"AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
+                    {field:"timeframe", type:"select", options:[{value:"",text:"Select timeframe..."},"1H","4H","1D","1W","1M" ]},
+                    {field:"date", type:"date",range:true}
+                ]
+            },
+            template:
+            `
+            <button type="button" data-bs-toggle="modal" data-bs-target="#data_settings_modal" class="btn btn-outline-secondary" >Data Settings</button>
+            <div class="modal" id="data_settings_modal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Data Settings :</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="data_settings_form">
+                        <form-builder config={{fields}} global_variable="{{global_variable}}" />
+                    </div>
+                    </div>
+                </div>
+            </div>
+            `
+        })
+        let configRactive = new Ractive({
+            el: "#configSettings",
+            data:{
+                global_variable:"CONFIG_SETTINGS",
+                fields: [
+                    {field:"barsClose", label:"Bars",type:"range"},
+                    {field:"barsCloseReversal", label:"Minimum Bars", type:"range"},
+                    {field:"barsIgnore",label:"Bars Ignore", type:"range"},
+                    {field:"profitPercantage",label:"Profit", type:"range", steps:true},
+                    {field:"orderCall",label:"Order Call", type:"select", options:["Both","Long Only","Short Only"]}
+                ]
+            },
+            template:
+            `
+            <button type="button" data-bs-toggle="modal" data-bs-target="#config_settings_modal" class="btn btn-outline-secondary" >Config Settings</button>
+            <div class="modal" id="config_settings_modal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Config Settings :</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="data_settings_form">
+                        <form-builder config={{fields}} global_variable="{{global_variable}}" />
+                    </div>
+                    </div>
+                </div>
+            </div>
+            `
+        })
+
+    </script>
+
+
+
+<!-- <script type="module">
+    //AAPL
+    import apple_1h  from "./assets/JSON/AAPL/AAPL, 1H.json" assert {type:"json"}
+    import apple_4h  from "./assets/JSON/AAPL/AAPL, 4H.json" assert {type:"json"}
+    import apple_1d  from "./assets/JSON/AAPL/AAPL, 1D.json" assert {type:"json"}
+    import apple_1w from "./assets/JSON/AAPL/AAPL, 1W.json" assert {type:"json"}
+    import apple_1m from "./assets/JSON/AAPL/AAPL, 1M.json" assert {type:"json"}
+    window.AAPL = {
+        "1H" : apple_1h,
+        "4H" : apple_4h,
+        "1D" : apple_1d,
+        "1W" : apple_1w,
+        "1M" : apple_1m
+    }
+    //AMZN
+    import amazon_1h from "./assets/JSON/AMZN/AMZN, 1H.json" assert {type:"json"}
+    import amazon_4h from "./assets/JSON/AMZN/AMZN, 4H.json" assert {type:"json"}
+    import amazon_1d from "./assets/JSON/AMZN/AMZN, 1D.json" assert {type:"json"}
+    import amazon_1w from "./assets/JSON/AMZN/AMZN, 1W.json" assert {type:"json"}
+    import amazon_1m from "./assets/JSON/AMZN/AMZN, 1M.json" assert {type:"json"}
+    window.AMZN = {
+        "1H" : amazon_1h,
+        "4H" : amazon_4h,
+        "1D" : amazon_1d,
+        "1W" : amazon_1w,
+        "1M" : amazon_1m
+    }
+    //GOOGL
+    import google_1h from "./assets/JSON/GOOGL/GOOGL, 1H.json" assert {type:"json"}
+    import google_4h from "./assets/JSON/GOOGL/GOOGL, 4H.json" assert {type:"json"}
+    import google_1d from "./assets/JSON/GOOGL/GOOGL, 1D.json" assert {type:"json"}
+    import google_1w from "./assets/JSON/GOOGL/GOOGL, 1W.json" assert {type:"json"}
+    import google_1m from "./assets/JSON/GOOGL/GOOGL, 1M.json" assert {type:"json"}
+    window.GOOGL = {
+        "1H" : google_1h,
+        "4H" : google_4h,
+        "1D" : google_1d,
+        "1W" : google_1w,
+        "1M" : google_1m
+    }
+    //MSFT
+    import microsoft_1h from "./assets/JSON/MSFT/MSFT, 1H.json" assert {type:"json"}
+    import microsoft_4h from "./assets/JSON/MSFT/MSFT, 4H.json" assert {type:"json"}
+    import microsoft_1d from "./assets/JSON/MSFT/MSFT, 1D.json" assert {type:"json"}
+    import microsoft_1w from "./assets/JSON/MSFT/MSFT, 1W.json" assert {type:"json"}
+    import microsoft_1m from "./assets/JSON/MSFT/MSFT, 1M.json" assert {type:"json"}
+    window.MSFT = {
+        "1H" : microsoft_1h,
+        "4H" : microsoft_4h,
+        "1D" : microsoft_1d,
+        "1W" : microsoft_1w,
+        "1M" : microsoft_1m
+    }
+    //NVDA
+    import nvidia_1h from "./assets/JSON/NVDA/NVDA, 1H.json" assert {type:"json"}
+    import nvidia_4h from "./assets/JSON/NVDA/NVDA, 4H.json" assert {type:"json"}
+    import nvidia_1d from "./assets/JSON/NVDA/NVDA, 1D.json" assert {type:"json"}
+    import nvidia_1w from "./assets/JSON/NVDA/NVDA, 1W.json" assert {type:"json"}
+    import nvidia_1m from "./assets/JSON/NVDA/NVDA, 1M.json" assert {type:"json"}
+    window.NVDA = {
+        "1H" : nvidia_1h,
+        "4H" : nvidia_4h,
+        "1D" : nvidia_1d,
+        "1W" : nvidia_1w,
+        "1M" : nvidia_1m
+    }
+    //TSLA
+    import tesla_1h from "./assets/JSON/TSLA/TSLA, 1H.json" assert {type:"json"}
+    import tesla_4h from "./assets/JSON/TSLA/TSLA, 4H.json" assert {type:"json"}
+    import tesla_1d from "./assets/JSON/TSLA/TSLA, 1D.json" assert {type:"json"}
+    import tesla_1w from "./assets/JSON/TSLA/TSLA, 1W.json" assert {type:"json"}
+    import tesla_1m from "./assets/JSON/TSLA/TSLA, 1M.json" assert {type:"json"}
+    window.TSLA = {
+        "1H" : tesla_1h,
+        "4H" : tesla_4h,
+        "1D" : tesla_1d,
+        "1W" : tesla_1w,
+        "1M" : tesla_1m
+    }
+</script> -->
+
+
+
+
+</body>
+</html>
