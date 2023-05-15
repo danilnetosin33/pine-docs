@@ -12,7 +12,39 @@
     <script src="./components.js"></script>
     <title>Example UI</title>
 </head>
+<style>
+    .selected_item{
+        background-color: #c5c5c58c;
+        /* border-right: 3px solid #0d6efd;; */
+        border-left:  3px solid #0d6efd;;
+    }
+::-webkit-scrollbar-track
+{
+	-webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3);
+	border-radius: 10px;
+	background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar
+{
+	width: 7px;
+	background-color: #F5F5F5;
+}
+
+::-webkit-scrollbar-thumb
+{
+	border-radius: 10px;
+	-webkit-box-shadow: inset 0 0 6px rgba(56, 12, 151, 0.3);
+	background-color: #414141;
+}
+
+</style>
+
+
+
 <body style="width: 94%;margin: auto;">
+
+
     <div class="mb-2 d-grid col-8 mx-auto" id="exportSettings"></div>
     <div class="mt-2">
         <div class="mb-2 d-grid col-8 mx-auto"  id="fullSettings"></div>
@@ -295,8 +327,8 @@ window.dataRactive = new Ractive({
             data:{
                 global_variable:"DATA_SETTINGS",
                 fields: [
-                    {field:"symbols", multiple:true,type:"select", options:["AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
-                    {field:"timeframe", type:"select", options:[{value:"",text:"Select timeframe..."},"1H","4H","1D","1W","1M" ]},
+                    {field:"symbols", multiple:true,type:"dropdown", options:["AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
+                    {field:"timeframe", type:"dropdown", options:[{value:"",text:"Select timeframe..."},"1H","4H","1D","1W","1M" ]},
                     {field:"date", type:"date",range:true}
                 ]
             },

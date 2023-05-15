@@ -1,4 +1,4 @@
-module.exports = function calculateProfit(config) {
+export default function calculateProfit(config) {
   // Config settings
   let orderCall = config.orderCall || "Both";
   let barsCloseReversal = config.barsCloseReversal || 5;
@@ -29,6 +29,10 @@ module.exports = function calculateProfit(config) {
   var entryPriceShort = [];
   var entryBarindexShort = [];
 
+  var bearishReversal = undefined;
+  var bullishReversal = undefined;
+  var bullish_TAR = undefined;
+  var bearish_TAR = undefined;
   // UTILS FUNCTIONS
   function countTakeProfitPerTrade(initPrice, lastPrice, order) {
     return (order / initPrice) * (lastPrice - initPrice);
@@ -103,7 +107,7 @@ module.exports = function calculateProfit(config) {
       lastReversalBarsShort.push(reversal_bar_short);
     }
     if (lastReversalBarsShort.length > 0) {
-      temp_el = lastReversalBarsShort[lastReversalBarsShort.length - 1];
+      let temp_el = lastReversalBarsShort[lastReversalBarsShort.length - 1];
       temp_el.isOutter = temp_el.barHigh < high[bar_index];
       if (bar_index - temp_el.barIndex < barsCloseReversal) {
         lastReversalBarsShort = [];
@@ -451,4 +455,4 @@ module.exports = function calculateProfit(config) {
   // console.log("Orders status: ", closed);
   delete config["bars"];
   return { profit, orders: arrayStatistics.length, ...config };
-};
+}

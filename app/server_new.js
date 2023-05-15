@@ -1,20 +1,27 @@
-const calculateProfit = require("./calculateProfit");
-const async = require("async");
-const {
-  Worker,
-  isMainThread,
-  parentPort,
-  workerData,
-} = require("node:worker_threads");
+import calculateProfit from "./calculateProfit.js";
+import async from "async";
+import open from "open";
+import path from "path";
+import { fileURLToPath } from "url";
+import bodyParser from "body-parser";
+import express from "express";
+import { createRequire } from "module";
+import fs from "fs";
 
-const bodyParser = require("body-parser");
-const path = require("path");
-var express = require("express"),
-  app = express(),
-  port = 4020;
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+var app = express();
+var port = 4020;
 app.use(express.json());
 app.use(bodyParser.json({ extended: true }));
-app.listen(port);
+app.listen(port, (err) => {
+  if (err) {
+    console.log("ERROR", err);
+  } else {
+    open(`http://localhost:${port}/`);
+  }
+});
 app.use(express.static(__dirname));
 app.use(express.static("assets"));
 app.use(express.static("frontend"));
@@ -25,13 +32,11 @@ app.get("/", (req, res) => {
 
 app.post("/calculate", function (req, res) {
   let settings = req.body;
-  //console.log("SETTINGS", settings);
-
   // GET BARS DATA
-  let symbols = ["AAPL", "AMZN", "GOOGL", "MSFT", "NVDA", "TSLA"];
+  let symbols = [...settings.dataSettings.symbols];
   let allSymbolsBars = {};
 
-  symbols.forEach((symbol) => {
+  symbols.forEach(async (symbol) => {
     let path = `./assets/JSON/${symbol}/${symbol}, ${settings.dataSettings.timeframe}.json`;
     let bars_data = require(path);
     //FILTER BARS BY DATE RANGE
@@ -55,7 +60,6 @@ app.post("/calculate", function (req, res) {
   let fullResult = buildParams(configSettings);
   let arrParams = fullResult.resultModified;
   let alias = fullResult.alias;
-
   //let results = [];
   let results = {};
   // PREPARE CASES
@@ -72,7 +76,6 @@ app.post("/calculate", function (req, res) {
         Object.keys(configSettings).forEach((key, index) => {
           obj[key] = arrTranslated[index];
         });
-
         obj = {
           ...obj,
           orderCall: settings.configSettings.orderCall,
@@ -198,8 +201,6 @@ function buildParams(params) {
     permute(inputArr);
     return result;
   };
-
-  console.time("answer time");
 
   let result = permutator(arr, arrTotal.length);
   // MODIFIED RESULT
