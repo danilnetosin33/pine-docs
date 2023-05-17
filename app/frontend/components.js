@@ -81,8 +81,6 @@ Ractive.components["range-input"] = Ractive.extend({
                         {{else}}
                             <option value="1" selected>1</option>
                             <option value="0.1">0.1</option>
-                            <option value="0.01">0.01</option>
-                            <option value="0.001">0.001</option>
                         {{/if}}
                     </select>
             {{/if}}
@@ -107,21 +105,21 @@ Ractive.components["range-input"] = Ractive.extend({
     this.set("values", { from: 0, to: 0 });
 
     this.observe("values", (newValue, oldValue) => {
-      if (newValue.to > 0) {
+      if (newValue.to >= 0) {
         var new_field = [];
         for (
           var i = +newValue.from;
           i <= +newValue.to;
           i += Number(this.get("selected_step"))
         ) {
-          let new_i = i;
+          let new_i = +i;
           if (i.toString().includes(".")) {
             new_i = new_i.toString().split(".");
             new_i.shift();
             new_i = new_i.length;
-            new_field.push(i.toFixed(new_i));
+            new_field.push(+i.toFixed(new_i));
           } else {
-            new_field.push(i);
+            new_field.push(+i);
           }
         }
         window[this.parent.get("global_variable")][this.get("config.field")] =

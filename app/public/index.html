@@ -9,87 +9,280 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js" integrity="sha384-Y4oOpwW3duJdCWv5ly8SCFYWqFDsfob/3GkgExXKV4idmbt98QcxXYs9UoXAB7BZ" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/ractive"></script>
     <script src="https://kit.fontawesome.com/e45f08485e.js" crossorigin="anonymous"></script>
-    <script src="./components.js"></script>
+    <script src="./assets/functions/components.js"></script>
     <title>Example UI</title>
 </head>
-<body>
+<body>qqqq
+    <div class="mb-2 d-grid col-8 mx-auto" id="exportSettings"></div>
     <div class="mt-2">
+        <div class="mb-2 d-grid col-8 mx-auto"  id="fullSettings"></div>
         <div class="mb-2 d-grid col-8 mx-auto"  id="dataSettings"></div>
         <div class="mb-2 d-grid col-8 mx-auto" id="configSettings"></div>
         <button id="btn_calculate" class="mb-2 d-grid col-8 mx-auto btn btn-primary" > CALCULATE </button>
-        
     </div>
     
-    <div id="content" style="max-height:80vh;overflow: auto;">
+    <div id="content" style="min-height:70vh;max-height:80vh;overflow: auto;">
         <div id="table-profit"></div>
     </div>
-    
-    <script>
+
+    <div id="toast">
+    </div>  
+    <script type="module">
+
+import calculateProfit from "./assets/functions/calculateProfit.js";
+
+        window.DATA_SETTINGS = {}
+        window.CONFIG_SETTINGS = {}
+
+
+async function calculateByParams(settings) {
+    console.log("INSIDE_CALC" , settings)
+
+// GET BARS DATA
+let symbols = [...settings.dataSettings.symbols];
+let allSymbolsBars = {};
+
+await symbols.forEach(async (symbol) => {
+  let path = `./assets/JSON/${symbol}/${symbol}, ${settings.dataSettings.timeframe}.json`;
+  let bars_data = await fetch(path)
+  bars_data = await bars_data.json()
+
+  //FILTER BARS BY DATE RANGE
+  let date_from = new Date(settings.dataSettings.date.from).getTime();
+  let date_to = new Date(settings.dataSettings.date.to).getTime();
+  bars_data = bars_data.filter(
+    (el) => +el.time + "000" >= date_from && +el.time + "000" < date_to
+  );
+  bars_data = bars_data.reverse();
+  allSymbolsBars[symbol] = bars_data;
+});
+
+let configSettings = {
+  barsClose: settings.configSettings.barsClose,
+  barsCloseReversal: settings.configSettings.barsCloseReversal,
+  barsIgnore: settings.configSettings.barsIgnore,
+  profitPercantage: settings.configSettings.profitPercantage,
+};
+
+// BUILD ALL CASES PARAMS
+let fullResult = buildParams(configSettings);
+let arrParams = fullResult.resultModified;
+let alias = fullResult.alias;
+//let results = [];
+let results = {};
+// PREPARE CASES
+await Object.keys(allSymbolsBars).forEach((symbol_bars) => {
+    console.log()
+  if (!results[symbol_bars]) {
+    results[symbol_bars] = [];
+  }
+  async.each(
+    arrParams,
+    (arr) => {
+      let arrTranslated = arr.map((el) => alias[el]);
+
+      let obj = {};
+      Object.keys(configSettings).forEach((key, index) => {
+        obj[key] = arrTranslated[index];
+      });
+      obj = {
+        ...obj,
+        orderCall: settings.configSettings.orderCall,
+        bars: allSymbolsBars[symbol_bars],
+      };
+      console.log("ASDASDADAD" , obj)
+      results[symbol_bars].push(calculateProfit(obj));
+    },
+    function (err) {
+      if (err) {
+        console.log("Calculation error:", err);
+      } else {
+        console.log("Calculation finished");
+      }
+    }
+  );
+});
+
+return results
+
+}
+
+function buildParams(params) {
+let inputObj = params || {
+  var1: [2, 3, 4, 5, 6, 7, 8],
+  var2: [2, 3, 4, 5, 6, 7, 8],
+  var3: [2, 3, 4, 5, 6, 7, 8],
+  var4: [2, 3, 4, 5, 6, 7, 8],
+};
+
+// let var1 = [2,3,4,5,6,7,8]
+// let var2 = [2, 3, 4, 5, 6, 7, 8]
+// let var3 = [2, 3, 4, 5, 6, 7, 8]
+// let var4 = [2, 3, 4, 5, 6, 7, 8]
+let arrTotal = [];
+Object.keys(inputObj).forEach((key) => {
+  arrTotal.push(inputObj[key]);
+});
+
+//console.log("ARR_TOTAL", arrTotal);
+
+let fillAlias = (arrOfArray) => {
+  let resultArr = [];
+  let alias = {};
+  arrOfArray.forEach((arr, indexOutter) => {
+    arr.forEach((el, indexInner) => {
+      resultArr.push(`index${indexOutter}_${indexInner}`);
+      alias[`index${indexOutter}_${indexInner}`] = el;
+    });
+  });
+  return { resultArr, alias };
+};
+
+let arrFull = fillAlias(arrTotal);
+//console.log("ARRAY_FULL", arrFull);
+let arr = arrFull.resultArr;
+let alias = arrFull.alias;
+
+let modify = (originalArr, variables) => {
+  let resultZboubNew = originalArr.map((el) =>
+    el.slice(0, variables).join("AAA")
+  );
+  let resultNew = Array.from(new Set(resultZboubNew)).map((el) =>
+    el.split("AAA")
+  );
+  resultNew = resultNew.filter((el, indexOutter) => {
+    let isValid = 0;
+    el.forEach((elInner, index) => {
+      if (elInner.includes("index" + index)) {
+        isValid++;
+      }
+    });
+    return el.length == isValid;
+  });
+  return resultNew;
+};
+
+const permutator = (inputArr, variable) => {
+  let result = [];
+  const permute = (arr, m = []) => {
+    if (arr.length === 0 || m.length == variable) {
+      result.push(m);
+    } else {
+      for (let i = 0; i < arr.length; i++) {
+        let curr = arr.slice();
+        let next = curr.splice(i, 1);
+        // TODO TEST
+        let isValid = 0;
+        m.forEach((elInner, index) => {
+          if (elInner.includes("index" + index)) {
+            isValid++;
+          }
+        });
+        if (!m[0] || (isValid == m.length && m.length <= variable))
+          permute(curr.slice(), m.concat(next));
+      }
+    }
+  };
+
+  permute(inputArr);
+  return result;
+};
+
+let result = permutator(arr, arrTotal.length);
+// MODIFIED RESULT
+let resultModified = modify(result, arrTotal.length);
+// console.log("MODIFIED_RESULT", resultModified);
+
+// FINAL RESULT AND TRANSLATED
+// resultModified.forEach((arr, index) => {
+//   if (index < 10) {
+//     let worker = new Worker("exampleWorker.js", { type: "module" });
+//     let arrTranslated = arr.map((el) => alias[el]);
+//     console.log("ARR_TRANSLAED", arrTranslated);
+//     worker.postMessage(arrTranslated);
+
+//     worker.onmessage = function (event) {
+//       console.log("RESULT WEB WORKER", event.data);
+//     };
+//   }
+
+//   // call webworker  and set varaibles
+// });
+
+// ADD WEBWORKERS
+
+return { resultModified, alias };
+}
+
+
+        
         // CALCULATE CALL
         let btn_calculate = document.getElementById("btn_calculate")
 
-
-        // !!! don`t need to fill forms --> have default settings obj (for testing)
         btn_calculate.onclick = (ev)=>{
-            ev.target.disabled = true
-            let data = {}
-                if(Object.keys(window.DATA_SETTINGS).length == 3 && Object.keys(window.CONFIG_SETTINGS).length == 5){
-                   data = { dataSettings: window.DATA_SETTINGS, configSettings:window.CONFIG_SETTINGS}
-                }
-                else{
-                    data = {            
-                        dataSettings: {
-                            "symbol": "AAPL",
-                            "timeframe": "1H",
-                            "date": {
-                                "from": "2013-01-01",
-                                "to": "2023-01-01"
-                            }
-                        },
-                        configSettings: {
-                            "orderCall": "Both",
-                            "barsClose": [2,3,4,5,6],
-                            "barsCloseReversal":[2,3,4,5,6],
-                            "barsIgnore":[2,3,4,5,6],
-                            "profitPercantage": [2,3,4,5,6]
-                        }
-                }
-            }
 
-            
-            console.log("RESULT")
-            fetch("/calculate", 
-            {
-                method:"POST", 
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data)
-            }).then((response) => {
-                    return response.json();
-                })
-                .then((data) => {
-                    console.log("DATA" ,  data);
-                    // data = data.sort((a, b) => b.profit - a.profit)
-                    window.tableProfit.set("fullData" ,  data)
-                    
-                    ev.target.disabled = false
-                });
-        }
+let data = {}
+    if(Object.keys(window.DATA_SETTINGS).length == 3 && Object.keys(window.CONFIG_SETTINGS).length == 5){
+        ev.target.disabled = true
+       data = { dataSettings: window.DATA_SETTINGS, configSettings:window.CONFIG_SETTINGS}
+        
+
+       window.tableProfit.set("fullData" ,  [])
+
+       calculateByParams(data).then((calculated)=>{console.log("CLCACALCALCALCALCa" , calculated)})
+        // console.log("ASDADADADS" , calculatedData)
+        // window.tableProfit.set("fullData" ,  calculatedData)
+        // ev.target.disabled = false
+
+    }
+    else{
+
+        let ractive = new Ractive({
+            el:"#toast",
+            template:`
+                <toast type="error" text="Check settings! " />
+            `
+        })
+}
+}
+
+
     
 
-window.tableProfit  = new Ractive({
+
+        window.tableProfit  = new Ractive({
         el: "#table-profit",
         data : {
-            selectConfig:{field:"symbol", options:[{value:"",text:"Select symbol..."},"AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
+            selectConfig:{field:"symbol", options:[] },
             currentData:[],
             currentPage:0,
             currentPageData:[],
             filterState:{profit:true}},
         template:`
-        {{#if fullData}}
-            <div style="width:30%">
-                <select-input config={{selectConfig}} value={{symbolValue}} />
+            {{#if (Array.isArray(fullData) && fullData.length == 0) || (typeof fullData === "object" && Object.keys(fullData).length == 0) }}
+                <!-- LOADER --> 
+                <div class="d-flex justify-content-center" style="margin-top:30px">
+                    <div class="spinner-grow" role="status" style="margin-right:5px">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="spinner-grow" role="status" style="margin-right:5px">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="spinner-grow" role="status" style="margin-right:5px">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            {{elseif (Array.isArray(fullData) && fullData.length>0) || (typeof fullData === "object" && Object.keys(fullData).length > 0) }}
+            <div style="display:flex;justify-content:space-between;align-items: center;">
+                
+                <div style="width:30%">
+                    <select-input config={{selectConfig}} value={{symbolValue}} />
+                </div>
+                <div>
+                    {{#if symbolValue && symbolValue != ""}}
+                        <button type="button" class="btn btn-outline-primary" on-click="@this.sendToExport(fullData[symbolValue],symbolValue, 'csv')"  data-bs-toggle="modal" data-bs-target="#export_file_modal" ><i class="fa-solid fa-file-arrow-down"></i></button>
+                    {{/if}}
+                </div>
             </div>
         {{/if}}
         {{#if currentPageData.length>0 && symbolValue && symbolValue != "" }}
@@ -125,15 +318,19 @@ window.tableProfit  = new Ractive({
 
             <nav>
                 <ul class="pagination justify-content-center ">
-                    <li class="page-item {{#if currentPage == 0}}disabled{{/if}}" on-click="@this.prevPage()"><span class="page-link">Previous</span></li>
-                    <li class="page-item"><input class="form-control" type="number" value={{currentPage}} on-blur="@this.changePage()" /></li>
-                    <li class="page-item {{#if currentPage == Math.floor(currentData.length/10)}}disabled{{/if}} " on-click="@this.nextPage()" ><span class="page-link" href="#">Next</span></li>
+                    <li style="cursor:pointer;user-select: none;" class="page-item {{#if currentPage == 0}}disabled{{/if}}" on-click="@this.prevPage()"><span class="page-link">Previous</span></li>
+                    <li class="page-item"><input class="form-control" type="number" min="0" max="Math.floor(currentData.length/10)" value={{currentPage}} on-blur="@this.changePage()" /></li>
+                    <li style="cursor:pointer;user-select: none;" class="page-item {{#if currentPage == Math.floor(currentData.length/10)}}disabled{{/if}} " on-click="@this.nextPage()" ><span class="page-link" href="#">Next</span></li>
                 </ul>
             </nav>
         {{/if}}
 
-
         `,
+        sendToExport : function(json, fileName ,exportType){
+            window.exportRactive.set("exportData", json)
+            window.exportRactive.set("exportType", exportType)
+            window.exportRactive.set("fileName" , fileName)
+        },
         filterData:function(param){
             let currentData = this.get("currentData")
             if(this.get("filterState")[param]){
@@ -176,6 +373,12 @@ window.tableProfit  = new Ractive({
                 let newCurrentData = currentData.slice(indexStart, indexEnd)
                 this.set("currentPageData" , newCurrentData)
             }
+            this.observe("fullData", (newValue,oldValue)=>{
+                this.set("currentData",newValue)
+                this.set("currentPage", 0)
+                this.set("selectConfig.options" , [...window.DATA_SETTINGS.symbols])
+                // this.set("symbolValue", window.DATA_SETTINGS.symbols)
+            })
             this.observe("symbolValue",(newValue,oldValue)=>{
                 if(newValue != oldValue){
                     this.set("currentData" , this.get("fullData")[newValue] || [])
@@ -190,13 +393,84 @@ window.tableProfit  = new Ractive({
         }
 
 })
+window.exportRactive = new Ractive({
+    el:"#exportSettings",
+    data:{
+        number_records_tooltip : "if 0 --> return all records"
+    },
+    template:`
+    <div class="modal" id="export_file_modal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Export {{exportType.toUpperCase()}} settings :</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="export_csv_form">
+                        <form>
+                            <div class="mb-3">
+                                <label class="form-label">Sort by </label>
+                                <select class="form-select" value="{{sort_by}}">
+                                    <option value="profit_up">Profit (high to low)</option>
+                                    <option value="profit_down">Profit (low to high)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Number records  <a data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{number_records_tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #015efe;"></i> </a>    </label>
+                                <input type="number" class="form-control"  value="{{numberRecords || 0}}" min='0' />   
+                            </div>
 
-        let dataRactive = new Ractive({
+                            <div class="d-grid mt-4">
+                                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" on-click="@this.exportFile()">Export... </button>
+                            </div>
+                        </form>
+                    </div>
+                    </div>
+                </div>
+            </div>
+    `,
+    exportFile:function(){
+        let type = this.get("exportType")
+        let json = this.get("exportData")
+
+        let sortBy = this.get("sort_by")  
+        if(sortBy == "profit_up"){
+            json = json.sort((a, b) => b.profit - a.profit)
+        }
+        else if (sortBy == "profit_down"){
+            json = json.sort((a, b) => a.profit - b.profit)
+        }
+        if(this.get("numberRecords") && this.get("numberRecords") > 0){
+            json = json.slice(0,this.get("numberRecords"))
+        }
+    
+        if(type.toLowerCase() == "csv"){
+            var fields = Object.keys(json[0])
+            var replacer = function(key, value) { return value === null ? '' : value  } 
+            var csv = json.map(function(row){
+            return fields.map(function(fieldName){
+                return JSON.stringify(row[fieldName], replacer)
+            }).join(',')
+            })
+            csv.unshift(fields.join(',')) // add header column
+            csv = csv.join('\r\n');
+            csvFile = new Blob([csv], {type: 'text/csv'});
+            downloadLink = document.createElement("a");
+
+            downloadLink.download = this.get("fileName") && DATA_SETTINGS.timeframe ? `${this.get("fileName")},${DATA_SETTINGS.timeframe}.csv`  : "file.csv";
+            downloadLink.href = window.URL.createObjectURL(csvFile);
+            downloadLink.style.display = "none";
+            downloadLink.click()
+        }
+
+    }
+})
+window.dataRactive = new Ractive({
             el: "#dataSettings",
             data:{
                 global_variable:"DATA_SETTINGS",
                 fields: [
-                    {field:"symbol", type:"select", options:[{value:"",text:"Select symbol..."},"AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
+                    {field:"symbols", multiple:true,type:"select", options:["AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
                     {field:"timeframe", type:"select", options:[{value:"",text:"Select timeframe..."},"1H","4H","1D","1W","1M" ]},
                     {field:"date", type:"date",range:true}
                 ]
@@ -219,7 +493,7 @@ window.tableProfit  = new Ractive({
             </div>
             `
         })
-        let configRactive = new Ractive({
+window.configRactive = new Ractive({
             el: "#configSettings",
             data:{
                 global_variable:"CONFIG_SETTINGS",
@@ -250,6 +524,13 @@ window.tableProfit  = new Ractive({
             `
         })
 
+//initialize tooltips Bootstrap
+setTimeout(()=>{
+    document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    .forEach(tooltip => {
+    new bootstrap.Tooltip(tooltip)
+})
+},1000)
     </script>
 
 

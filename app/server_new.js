@@ -1,3 +1,6 @@
+// import { parentPort, workerData } from "worker_threads";
+import { Worker, workerData, parentPort } from "worker_threads";
+
 import calculateProfit from "./calculateProfit.js";
 import async from "async";
 import open from "open";
@@ -57,69 +60,109 @@ app.post("/calculate", function (req, res) {
   };
 
   // BUILD ALL CASES PARAMS
+  console.time("Build_params");
   let fullResult = buildParams(configSettings);
   let arrParams = fullResult.resultModified;
+  console.timeEnd("Build_params");
   let alias = fullResult.alias;
   //let results = [];
   let results = {};
+
+  let percentPart =
+    Object.keys(allSymbolsBars).length * arrParams.length * 0.05;
+  let countParts = 0;
+
   // PREPARE CASES
-  Object.keys(allSymbolsBars).forEach((symbol_bars) => {
+  console.time("Total_calc");
+
+  let counter = 0;
+  let temp = Math.floor(arrParams.length / 10);
+  let workerNumber = temp < 200 ? 200 : temp;
+  let workerCounter = 0;
+  let arrWorkers = [];
+  arrParams.forEach((el, index) => {
+    if (index % workerNumber == 0) {
+      arrWorkers.push(
+        arrParams.slice(workerCounter, workerCounter + workerNumber)
+      );
+      workerCounter += workerNumber;
+    }
+  });
+  Object.keys(allSymbolsBars).forEach((symbol_bars, index) => {
+    let startPartNumber = index * arrParams.length;
+
     if (!results[symbol_bars]) {
       results[symbol_bars] = [];
     }
-    async.each(
-      arrParams,
-      (arr) => {
-        let arrTranslated = arr.map((el) => alias[el]);
 
-        let obj = {};
-        Object.keys(configSettings).forEach((key, index) => {
-          obj[key] = arrTranslated[index];
-        });
-        obj = {
-          ...obj,
-          orderCall: settings.configSettings.orderCall,
-          bars: allSymbolsBars[symbol_bars],
-        };
-        results[symbol_bars].push(calculateProfit(obj));
-      },
-      function (err) {
-        if (err) {
-          console.log("Calculation error:", err);
-        } else {
-          console.log("Calculation finished");
+    console.time(`CALC_${symbol_bars}`);
+
+    // build arr [[]]
+    // for each
+
+    arrWorkers.forEach((arr, arrIndex) => {
+      let worker = new Worker("./webworker_calculate.js", {
+        workerData: {
+          arr,
+          alias,
+          configSettings,
+          symbol_bars,
+          symbol_bars_data: allSymbolsBars[symbol_bars],
+        },
+      });
+      worker.once("message", (result) => {
+        // push
+        // if arr.length == arrParams => send
+        counter++;
+        results[symbol_bars].push(result.result);
+        if (
+          counter * workerNumber >=
+          arrParams.length * Object.keys(allSymbolsBars).length
+        ) {
+          Object.keys(results).forEach((result) => {
+            let result_temp = [];
+            results[result].forEach((el) => {
+              result_temp = result_temp.concat(el);
+            });
+            results[result] = result_temp;
+          });
+          res.json(results);
+          console.timeEnd(`CALC_${symbol_bars}`);
         }
-      }
-    );
+        console.log(`Worker : `, counter);
+      });
+    });
+
+    // async.eachOfLimit(arrParams, 100, (arr, arrIndex, cb) => {
+    //   if (startPartNumber + arrIndex >= percentPart * countParts) {
+    //     countParts += 1;
+    //     console.log("OVER 5%", countParts * 5);
+    //   }
+
+    //   try {
+    //     buildResult(
+    //       results,
+    //       arr,
+    //       alias,
+    //       configSettings,
+    //       symbol_bars,
+    //       allSymbolsBars[symbol_bars]
+    //     );
+    //     //cb();
+    //   } catch (err) {
+    //     //cb(err);
+    //   }
+    // });
+    // .then(() => {
+    //   res.json(results);
+    // })
+    // .catch((err) => {
+    //   console.log("ERROR:", err);
+    // });
   });
 
-  res.json(results);
+  console.timeEnd("Total_calc");
 });
-
-// TODO FINISH
-// FINAL RESULT AND TRANSLATED
-// resultModified.forEach((arr, index) => {
-//   if (index < 10) {
-//     let worker = new Worker("exampleWorker.js", { type: "module" });
-//     let arrTranslated = arr.map((el) => alias[el]);
-//     console.log("ARR_TRANSLAED", arrTranslated);
-//     worker.postMessage(arrTranslated);
-
-//     worker.onmessage = function (event) {
-//       console.log("RESULT WEB WORKER", event.data);
-//     };
-//   }
-
-//   // call webworker  and set varaibles
-// });
-
-// if (
-//   Object.keys(settings.dataSettings).length > 0 &&
-//   Object.keys(settings.configSettings).length > 0
-// ) {
-//   // TODO :::  forEach for all cases of ranges run calculateProfit
-//   calculateProfit(settings.dataSettings, settings.configSettings);
-// }
 
 function buildParams(params) {
   let inputObj = params || {
@@ -227,3 +270,29 @@ function buildParams(params) {
 
   return { resultModified, alias };
 }
+
+function buildResult(
+  results,
+  arr,
+  alias,
+  configSettings,
+  symbol_bars,
+  symbol_bars_data
+) {
+  let arrTranslated = arr.map((el) => alias[el]);
+  let obj = {};
+  Object.keys(configSettings).forEach((key, index) => {
+    obj[key] = arrTranslated[index];
+  });
+  obj = {
+    ...obj,
+    orderCall: "Both",
+    bars: symbol_bars_data,
+  };
+  return calculateProfit(obj);
+
+  results[symbol_bars].push(calculateProfit(obj));
+}
+
+// func async count ()
+// delete first for eech
