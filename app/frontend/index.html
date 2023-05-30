@@ -322,9 +322,9 @@ window.configRactive = new Ractive({
             data:{
                 global_variable:"CONFIG_SETTINGS",
                 fields: [
-                    {field:"barsClose", label:"Bars",type:"range"},
-                    {field:"barsCloseReversal", label:"Minimum Bars", type:"range"},
-                    {field:"barsIgnore",label:"Bars Ignore", type:"range"},
+                    {field:"barsClose", label:"Bars",type:"range", tooltip:"Exit trade after this amount of bars"},
+                    {field:"barsCloseReversal", label:"Minimum Bars", type:"range", tooltip: "Amount of bars to wait until listen to close by reversal trigger"},
+                    {field:"barsIgnore",label:"Bars Ignore", type:"range",tooltip:"How much bars ignore after last trade closed"},
                     {field:"profitPercantage",label:"Profit", type:"range", steps:true},
                     {field:"orderCall",label:"Order Call", type:"select", options:["Both","Long Only","Short Only"]}
                 ]
@@ -358,90 +358,6 @@ setTimeout(()=>{
 
    
    </script>
-
-
-
-<!-- <script type="module">
-    //AAPL
-    import apple_1h  from "./assets/JSON/AAPL/AAPL, 1H.json" assert {type:"json"}
-    import apple_4h  from "./assets/JSON/AAPL/AAPL, 4H.json" assert {type:"json"}
-    import apple_1d  from "./assets/JSON/AAPL/AAPL, 1D.json" assert {type:"json"}
-    import apple_1w from "./assets/JSON/AAPL/AAPL, 1W.json" assert {type:"json"}
-    import apple_1m from "./assets/JSON/AAPL/AAPL, 1M.json" assert {type:"json"}
-    window.AAPL = {
-        "1H" : apple_1h,
-        "4H" : apple_4h,
-        "1D" : apple_1d,
-        "1W" : apple_1w,
-        "1M" : apple_1m
-    }
-    //AMZN
-    import amazon_1h from "./assets/JSON/AMZN/AMZN, 1H.json" assert {type:"json"}
-    import amazon_4h from "./assets/JSON/AMZN/AMZN, 4H.json" assert {type:"json"}
-    import amazon_1d from "./assets/JSON/AMZN/AMZN, 1D.json" assert {type:"json"}
-    import amazon_1w from "./assets/JSON/AMZN/AMZN, 1W.json" assert {type:"json"}
-    import amazon_1m from "./assets/JSON/AMZN/AMZN, 1M.json" assert {type:"json"}
-    window.AMZN = {
-        "1H" : amazon_1h,
-        "4H" : amazon_4h,
-        "1D" : amazon_1d,
-        "1W" : amazon_1w,
-        "1M" : amazon_1m
-    }
-    //GOOGL
-    import google_1h from "./assets/JSON/GOOGL/GOOGL, 1H.json" assert {type:"json"}
-    import google_4h from "./assets/JSON/GOOGL/GOOGL, 4H.json" assert {type:"json"}
-    import google_1d from "./assets/JSON/GOOGL/GOOGL, 1D.json" assert {type:"json"}
-    import google_1w from "./assets/JSON/GOOGL/GOOGL, 1W.json" assert {type:"json"}
-    import google_1m from "./assets/JSON/GOOGL/GOOGL, 1M.json" assert {type:"json"}
-    window.GOOGL = {
-        "1H" : google_1h,
-        "4H" : google_4h,
-        "1D" : google_1d,
-        "1W" : google_1w,
-        "1M" : google_1m
-    }
-    //MSFT
-    import microsoft_1h from "./assets/JSON/MSFT/MSFT, 1H.json" assert {type:"json"}
-    import microsoft_4h from "./assets/JSON/MSFT/MSFT, 4H.json" assert {type:"json"}
-    import microsoft_1d from "./assets/JSON/MSFT/MSFT, 1D.json" assert {type:"json"}
-    import microsoft_1w from "./assets/JSON/MSFT/MSFT, 1W.json" assert {type:"json"}
-    import microsoft_1m from "./assets/JSON/MSFT/MSFT, 1M.json" assert {type:"json"}
-    window.MSFT = {
-        "1H" : microsoft_1h,
-        "4H" : microsoft_4h,
-        "1D" : microsoft_1d,
-        "1W" : microsoft_1w,
-        "1M" : microsoft_1m
-    }
-    //NVDA
-    import nvidia_1h from "./assets/JSON/NVDA/NVDA, 1H.json" assert {type:"json"}
-    import nvidia_4h from "./assets/JSON/NVDA/NVDA, 4H.json" assert {type:"json"}
-    import nvidia_1d from "./assets/JSON/NVDA/NVDA, 1D.json" assert {type:"json"}
-    import nvidia_1w from "./assets/JSON/NVDA/NVDA, 1W.json" assert {type:"json"}
-    import nvidia_1m from "./assets/JSON/NVDA/NVDA, 1M.json" assert {type:"json"}
-    window.NVDA = {
-        "1H" : nvidia_1h,
-        "4H" : nvidia_4h,
-        "1D" : nvidia_1d,
-        "1W" : nvidia_1w,
-        "1M" : nvidia_1m
-    }
-    //TSLA
-    import tesla_1h from "./assets/JSON/TSLA/TSLA, 1H.json" assert {type:"json"}
-    import tesla_4h from "./assets/JSON/TSLA/TSLA, 4H.json" assert {type:"json"}
-    import tesla_1d from "./assets/JSON/TSLA/TSLA, 1D.json" assert {type:"json"}
-    import tesla_1w from "./assets/JSON/TSLA/TSLA, 1W.json" assert {type:"json"}
-    import tesla_1m from "./assets/JSON/TSLA/TSLA, 1M.json" assert {type:"json"}
-    window.TSLA = {
-        "1H" : tesla_1h,
-        "4H" : tesla_4h,
-        "1D" : tesla_1d,
-        "1W" : tesla_1w,
-        "1M" : tesla_1m
-    }
-</script> -->
-
 
 
 

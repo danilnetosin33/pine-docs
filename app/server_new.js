@@ -73,8 +73,6 @@ app.post("/calculate", function (req, res) {
   let countParts = 0;
 
   // PREPARE CASES
-  console.time("Total_calc");
-
   let counter = 0;
   let temp = Math.floor(arrParams.length / 10);
   let workerNumber = temp < 200 ? 200 : temp;
@@ -88,6 +86,9 @@ app.post("/calculate", function (req, res) {
       workerCounter += workerNumber;
     }
   });
+
+  console.time("Total_calc");
+
   Object.keys(allSymbolsBars).forEach((symbol_bars, index) => {
     let startPartNumber = index * arrParams.length;
 
@@ -95,7 +96,7 @@ app.post("/calculate", function (req, res) {
       results[symbol_bars] = [];
     }
 
-    console.time(`CALC_${symbol_bars}`);
+    // console.time(`CALC_${symbol_bars}`);
 
     // build arr [[]]
     // for each
@@ -108,6 +109,7 @@ app.post("/calculate", function (req, res) {
           configSettings,
           symbol_bars,
           symbol_bars_data: allSymbolsBars[symbol_bars],
+          orderCall: settings.configSettings.orderCall,
         },
       });
       worker.once("message", (result) => {
@@ -127,7 +129,9 @@ app.post("/calculate", function (req, res) {
             results[result] = result_temp;
           });
           res.json(results);
-          console.timeEnd(`CALC_${symbol_bars}`);
+          console.timeEnd("Total_calc");
+          console.log("RESULTS:", Object.keys(results));
+          //       console.timeEnd(`CALC_${symbol_bars}`);
         }
         console.log(`Worker : `, counter);
       });
@@ -160,8 +164,6 @@ app.post("/calculate", function (req, res) {
     //   console.log("ERROR:", err);
     // });
   });
-
-  console.timeEnd("Total_calc");
 });
 
 function buildParams(params) {

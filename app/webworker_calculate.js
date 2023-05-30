@@ -6,7 +6,8 @@ function buildResult(
   alias,
   configSettings,
   symbol_bars,
-  symbol_bars_data
+  symbol_bars_data,
+  orderCall
 ) {
   let arrTranslated = arr.map((el) => alias[el]);
   let obj = {};
@@ -15,7 +16,7 @@ function buildResult(
   });
   obj = {
     ...obj,
-    orderCall: "Both",
+    orderCall: orderCall,
     bars: symbol_bars_data,
   };
   return calculateProfit(obj);
@@ -33,7 +34,8 @@ workerData.arr.forEach((arr, arrIndex) => {
       workerData.alias,
       workerData.configSettings,
       workerData.symbol_bars,
-      workerData.symbol_bars_data
+      workerData.symbol_bars_data,
+      workerData.orderCall
     )
   );
 });

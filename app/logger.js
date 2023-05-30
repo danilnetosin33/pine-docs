@@ -1,6 +1,3 @@
-// channel id (pinescript_test) :-1001967555467
-// bot token : 6271843557:AAEQ6ifCSa5En8lmtWvJ3kPYU-cTPYK6XmE
-
 const alert = require("alert");
 const { Telegraf } = require("telegraf");
 

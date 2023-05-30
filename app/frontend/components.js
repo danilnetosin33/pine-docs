@@ -3,6 +3,7 @@ Ractive.components["form-builder"] = Ractive.extend({
           <form>
               {{#each config as input}}
                   <div class="mb-3">
+                  <label class="form-label">{{#if input.label}} {{input.label}} {{else}} {{ input.field.charAt(0).toUpperCase() + input.field.slice(1).toLowerCase() }}{{/if}} {{#if input.tooltip && typeof input.tooltip == "string" && input.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{input.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
                       {{#if input.type == "range"}}
                         <range-input config={{input}}  />
                       {{elseif input.type == "divider"}}
@@ -65,7 +66,6 @@ Ractive.components["divider"] = Ractive.extend({
 Ractive.components["range-input"] = Ractive.extend({
   data: { selected_step: 1 },
   template: `
-        <label class="form-label" >{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }} {{/if}}</label>
         <div class="input-group mb-3">
             <span class="input-group-text">{{#if config.rangeLabels && config.rangeLabels[0]}} {{config.rangeLabels[0]}} {{else}} from {{/if}}</span>
                 <input type="number" id="{{config.field + '_from'}}" class="form-control" step="{{selected_step}}" value="{{values.from}}" on-input="@this.precisionValidation(@node)"  >
@@ -137,7 +137,6 @@ Ractive.components["date-input"] = Ractive.extend({
   },
   template: `
     {{#if config.range}}
-    <label class="form-label" >{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }} {{/if}}</label>
         <div class="input-group mb-3">
             <label class="input-group-text">From:</label>
             <input type="date" class="form-control" id="{{config.field + "_from"}}"  value="{{values.from}}"  />
@@ -220,7 +219,6 @@ Ractive.components["select-input"] = Ractive.extend({
     selectedValues: [],
   },
   template: `
-        <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }} {{/if}}</label>
             <select class="form-select" id="{{config.field}}" value="{{value}}">  
                 {{#each config.options as option}}
                     {{#if typeof option == "string"}}
@@ -267,8 +265,6 @@ Ractive.components["select-input"] = Ractive.extend({
 Ractive.components["dropdown-input"] = Ractive.extend({
   data: { showMenu: false, selectedItems: [] },
   template: `
-    <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }} {{/if}}</label>
-
     <div class="dropdown" >
       <a class="btn btn-secondary dropdown-toggle" id="{{config.field}}">
         {{#if config.multiple}}
