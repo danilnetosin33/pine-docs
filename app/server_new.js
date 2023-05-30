@@ -42,6 +42,10 @@ app.post("/calculate", function (req, res) {
   symbols.forEach(async (symbol) => {
     let path = `./assets/JSON/${symbol}/${symbol}, ${settings.dataSettings.timeframe}.json`;
     let bars_data = require(path);
+
+    //console.log("BARS_PATH" , path)
+    // console.log("BARS_DATA", bars_data);
+
     //FILTER BARS BY DATE RANGE
     let date_from = new Date(settings.dataSettings.date.from).getTime();
     let date_to = new Date(settings.dataSettings.date.to).getTime();
