@@ -13,8 +13,8 @@ Ractive.components["form-builder"] = Ractive.extend({
                         <dropdown-input config={{input}} />
                       {{elseif input.type == "date"}}
                         <date-input config={{input}} />
-                      {{else}}
-                          aaaa
+                      {{elseif input.type == "checkbox"}}
+                         <checkbox-input config={{input}} />
                       {{/if}}
                   </div>
               {{/each}}
@@ -98,6 +98,10 @@ Ractive.components["range-input"] = Ractive.extend({
     }
   },
   onrender: function () {
+    if (this.get("config").selected_step) {
+      this.set("selected_step", this.get("config").selected_step);
+    }
+
     if (!window[this.parent.get("global_variable")]) {
       window[this.parent.get("global_variable")] = {};
     }
@@ -348,5 +352,23 @@ qqqq
     });
 
     console.log("OPTIONS", options, dropdown);
+  },
+});
+
+Ractive.components["checkbox-input"] = Ractive.extend({
+  template: `
+<div class="form-check">
+ <input class="form-check-input" type="checkbox" {{#if config.defaultValue}} checked="" {{/if}}  on-change="@this.valueChanged(@event)" id="flexCheckDefault">
+ <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }} {{/if}}</label>
+</div>
+  `,
+  valueChanged: function (ev) {
+    console.log("VALUE_CHANGED", ev.target.checked);
+    window[this.parent.get("global_variable")][this.get("config.field")] =
+      ev.target.checked;
+  },
+  oncomplete: function () {
+    window[this.parent.get("global_variable")][this.get("config.field")] =
+      this.get("config.defaultValue");
   },
 });

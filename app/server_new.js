@@ -52,25 +52,55 @@ app.post("/calculate", function (req, res) {
     allSymbolsBars[symbol] = bars_data;
   });
 
-  let configSettings = {
-    barsClose: settings.configSettings.barsClose,
-    barsCloseReversal: settings.configSettings.barsCloseReversal,
-    barsIgnore: settings.configSettings.barsIgnore,
-    profitPercantage: settings.configSettings.profitPercantage,
+  let configSettings = {};
+  // let configSettings = {
+  //   barsClose: settings.configSettings.barsClose,
+  //   barsCloseReversal: settings.configSettings.barsCloseReversal,
+  //   barsIgnore: settings.configSettings.barsIgnore,
+  //   profitPercantage: settings.configSettings.profitPercantage,
+  // };
+  let disabledCriterias = [];
+
+  let addParametr = (fullObj, key) => {
+    if (!(fullObj[key].length == 1 && fullObj[key][0] == 0)) {
+      configSettings[key] = fullObj[key];
+    } else {
+      disabledCriterias.push(key);
+    }
   };
+
+  enableCCI: true;
+
+  // ADD PARAMETRS
+  addParametr(settings.configSettings, "barsClose");
+  addParametr(settings.configSettings, "barsCloseReversal");
+  addParametr(settings.configSettings, "barsIgnore");
+  addParametr(settings.configSettings, "profitPercantage");
+
+  if (settings.configSettings.enableCCI) {
+    configSettings.cciLength = settings.configSettings.cciLength;
+    configSettings.cciValue = settings.configSettings.cciValue;
+  }
+
+  console.log("RESULT", configSettings);
+
+  // CASE ADD CCI
+
+  // CHECK profit => if profit == 0  => delete from params
 
   // BUILD ALL CASES PARAMS
   console.time("Build_params");
-  let fullResult = buildParams(configSettings);
+  let fullResult = buildParams(configSettings); // less options => add profit : 0 ,
   let arrParams = fullResult.resultModified;
+
+  console.log("QQQQ", arrParams.length);
+
+  // console.log(arrParams[0]);
+
   console.timeEnd("Build_params");
   let alias = fullResult.alias;
   //let results = [];
   let results = {};
-
-  let percentPart =
-    Object.keys(allSymbolsBars).length * arrParams.length * 0.05;
-  let countParts = 0;
 
   // PREPARE CASES
   console.time("Total_calc");
@@ -97,17 +127,21 @@ app.post("/calculate", function (req, res) {
 
     console.time(`CALC_${symbol_bars}`);
 
+    console.log("DDDD", symbol_bars.length, allSymbolsBars[symbol_bars].length);
+
     // build arr [[]]
     // for each
 
     arrWorkers.forEach((arr, arrIndex) => {
+      console.log(allSymbolsBars[symbol_bars].slice().length);
       let worker = new Worker("./webworker_calculate.js", {
         workerData: {
           arr,
           alias,
           configSettings,
           symbol_bars,
-          symbol_bars_data: allSymbolsBars[symbol_bars],
+          symbol_bars_data: allSymbolsBars[symbol_bars].slice(),
+          disabledCriterias: disabledCriterias,
         },
       });
       worker.once("message", (result) => {
@@ -284,6 +318,8 @@ function buildResult(
   Object.keys(configSettings).forEach((key, index) => {
     obj[key] = arrTranslated[index];
   });
+
+  console.log("OBJ", obj);
   obj = {
     ...obj,
     orderCall: "Both",

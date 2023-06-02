@@ -40,7 +40,7 @@
         btn_calculate.onclick = (ev)=>{
 
             let data = {}
-                if(Object.keys(window.DATA_SETTINGS).length == 3 && Object.keys(window.CONFIG_SETTINGS).length == 5){
+                if(Object.keys(window.DATA_SETTINGS).length >= 3 && Object.keys(window.CONFIG_SETTINGS).length >= 5){
                     ev.target.disabled = true
                    data = { dataSettings: window.DATA_SETTINGS, configSettings:window.CONFIG_SETTINGS}
                     
@@ -326,7 +326,12 @@ window.configRactive = new Ractive({
                     {field:"barsCloseReversal", label:"Minimum Bars", type:"range"},
                     {field:"barsIgnore",label:"Bars Ignore", type:"range"},
                     {field:"profitPercantage",label:"Profit", type:"range", steps:true},
-                    {field:"orderCall",label:"Order Call", type:"select", options:["Both","Long Only","Short Only"]}
+                    {field:"orderCall",label:"Order Call", type:"select", options:["Both","Long Only","Short Only"]},
+                    { field: "enableCCI", label: "Enable CCI?", type: "checkbox" , defaultValue : true },
+                    // TODO range
+                    { field: "cciLength", label: "CCI Length", type: "range" },
+                    { field: "cciValue", label: "CCI Value", type: "range"  ,  selected_step : 10 },
+                    
                 ]
             },
             template:
