@@ -125,6 +125,8 @@ window.tableProfit  = new Ractive({
                         <th scope="col">Bars (Reversal)</th>
                         <th scope="col">Bars ignore</th>
                         <th scope="col">Profit %</th>
+                        <th scope="col">CCI length</th>
+                        <th scope="col">CCI value</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -136,6 +138,8 @@ window.tableProfit  = new Ractive({
                             <td>{{barsCloseReversal}}</td>
                             <td>{{barsIgnore}}</td>
                             <td>{{profitPercantage}}</td>  
+                            <td>{{cciLength}}</td>
+                            <td>{{cciValue}}</td>
                         </tr> 
                     {{/each}}
                 </tbody>
