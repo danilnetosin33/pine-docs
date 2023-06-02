@@ -147,6 +147,7 @@ app.post("/calculate", function (req, res) {
           symbol_bars,
           symbol_bars_data: allSymbolsBars[symbol_bars],
           orderCall: settings.configSettings.orderCall,
+          disabledCriterias,
         },
       });
       worker.once("message", (result) => {
