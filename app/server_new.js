@@ -52,6 +52,53 @@ app.post("/calculate", function (req, res) {
     bars_data = bars_data.filter(
       (el) => +el.time + "000" >= date_from && +el.time + "000" < date_to
     );
+    //FILTER BARS BY TRADING HOURS
+
+    if (
+      settings.dataSettings.timeframe != "1D" &&
+      settings.dataSettings.timeframe != "1W" &&
+      settings.dataSettings.timeframe != "1M"
+    ) {
+      bars_data = bars_data.filter((el) => {
+        let date = new Date(Number(el.time + "000"));
+        let hours = date.getHours();
+        let day = date.getDay();
+        hours = hours.toString();
+        if (hours.length == 1) {
+          hours = "0" + hours;
+        }
+        let minutes = date.getMinutes();
+        minutes = minutes.toString();
+        if (minutes.length == 1) {
+          minutes += "0";
+        }
+        let session = `${hours}${minutes}`;
+        let inSession = false;
+
+        let th = settings.dataSettings.trading_hours;
+        if (settings.dataSettings.isAdvancedTradingHours) {
+          let tradingHoursDays = [
+            settings.dataSettings.sunday_trading_hours,
+            settings.dataSettings.monday_trading_hours,
+            settings.dataSettings.tuesday_trading_hours,
+            settings.dataSettings.wednesday_trading_hours,
+            settings.dataSettings.thursday_trading_hours,
+            settings.dataSettings.friday_trading_hours,
+            settings.dataSettings.saturday_trading_hours,
+          ];
+          th = tradingHoursDays[day];
+        }
+        th.forEach((th_el) => {
+          if (th_el.from <= session && th_el.to >= session) {
+            inSession = true;
+          }
+        });
+        if (inSession) {
+          return el;
+        }
+      });
+    }
+
     bars_data = bars_data.reverse();
     allSymbolsBars[symbol] = bars_data;
   });
@@ -72,8 +119,6 @@ app.post("/calculate", function (req, res) {
       disabledCriterias.push(key);
     }
   };
-
-  enableCCI: true;
 
   // ADD PARAMETRS
   addParametr(settings.configSettings, "barsClose");

@@ -5,7 +5,11 @@ Ractive.components["form-builder"] = Ractive.extend({
                   <div class="mb-3">
                   <label class="form-label">{{#if input.label}} {{input.label}} {{else}} {{ input.field.charAt(0).toUpperCase() + input.field.slice(1).toLowerCase() }}{{/if}} {{#if input.tooltip && typeof input.tooltip == "string" && input.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{input.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
                       {{#if input.type == "range"}}
-                        <range-input config={{input}}  />
+                      <range-input config={{input}}  />
+                      {{elseif input.type == "multifield"}}
+                        <multifield config="{{input}}"/>
+                      {{elseif input.type == "text"}}
+                        <text-input config={{input}}/>
                       {{elseif input.type == "divider"}}
                         <divider config={{input}} />
                       {{elseif input.type == "select"}}
@@ -285,7 +289,6 @@ Ractive.components["dropdown-input"] = Ractive.extend({
           {{/if}}
         {{/each}}
       </ul>
-qqqq
       {{#if selectedItems.length>0}}
         <ul class="nav nav-pills" style="margin-top:1em;font-size: small;">
           {{#each selectedItems as val:index}}
@@ -350,7 +353,6 @@ qqqq
     console.log("OPTIONS", options, dropdown);
   },
 });
-
 Ractive.components["checkbox-input"] = Ractive.extend({
   template: `
 <div class="form-check">
@@ -366,5 +368,81 @@ Ractive.components["checkbox-input"] = Ractive.extend({
   oncomplete: function () {
     window[this.parent.get("global_variable")][this.get("config.field")] =
       this.get("config.defaultValue");
+  },
+});
+Ractive.components["text-input"] = Ractive.extend({
+  template: `
+  <div class="input-group mb-3">
+  {{#if config.button && (!config.button.side || config.button.side=="left")}}
+    <button class="btn btn-outline-{{config.button.type || 'secondary'}}" type="button">{{config.button.text}}</button>
+  {{/if}}
+    <input type="text" id="{{config.field}}" class="form-control" placeholder="{{config.placeholder}}" value="{{input_value||config.value }}"/>
+  {{#if config.button &&  config.button.side=="right"}}
+    <button class="btn btn-outline-{{config.button.type || 'secondary'}}" type="button">{{config.button.text}}</button>
+  {{/if}}
+  </div>
+  `,
+});
+Ractive.components["multifield"] = Ractive.extend({
+  data: {
+    config_item: {
+      field: "Item",
+      button: { text: "Delete", side: "right", type: "danger" },
+    },
+    items: [{ value: { from: "00:00", to: "24:00" } }],
+  },
+  template: `
+    {{#each items as item}}
+      <div class="input-group mb-3">
+      {{#if config_item.button && (!config_item.button.side || config_item.button.side=="left")}}
+        <button class="btn btn-outline-{{config_item.button.type || 'secondary'}}" type="button">{{config_item.button.text}}</button>
+      {{/if}}
+        <input type="text" id="{{config_item.field}}" class="form-control" placeholder="{{config_item.placeholder}}" value="{{item.value.from}}"/>
+        <input type="text" id="{{config_item.field}}" class="form-control" placeholder="{{config_item.placeholder}}" value="{{item.value.to}}"/>
+      {{#if config_item.button &&  config_item.button.side=="right"}}
+        <button class="btn btn-outline-{{config_item.button.type || 'secondary'}}" type="button">{{config_item.button.text}}</button>
+      {{/if}}
+      </div>
+    {{/each}}
+  
+      <button on-click="@this.addItem()" type="button" id="add_item" class="btn btn-outline-info">Add +</button>
+  `,
+  addItem: function () {
+    this.push("items", { value: "" });
+  },
+  deleteItem: function () {},
+  onrender: function () {
+    window.multifield = this;
+    this.observe("items", (newVal, oldVal) => {
+      //Items value == data
+      let temp_data = newVal.map((item) => {
+        return { ...item.value };
+      });
+      this.set("data", temp_data);
+
+      //Delete Item
+      let buttons = this.findAll("button");
+      buttons.forEach((btn, index) => {
+        if (btn.getAttribute("id") != "add_item") {
+          btn.onclick = () => {
+            this.splice("items", index, 1);
+          };
+        }
+      });
+    });
+
+    this.observe("data", (newVal, oldVal) => {
+      let newData = newVal;
+      if (this.get("parse_data")) {
+      } else {
+        newVal.forEach((el, index) => {
+          newData[index].from = el.from.replaceAll(":", "");
+          newData[index].to = el.to.replaceAll(":", "");
+        });
+      }
+
+      window[this.parent.get("global_variable")][this.get("config.field")] =
+        newData;
+    });
   },
 });
