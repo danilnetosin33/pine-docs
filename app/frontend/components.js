@@ -3,7 +3,6 @@ Ractive.components["form-builder"] = Ractive.extend({
           <form>
               {{#each config as input}}
                   <div class="mb-3">
-                  <label class="form-label">{{#if input.label}} {{input.label}} {{else}} {{ input.field.charAt(0).toUpperCase() + input.field.slice(1).toLowerCase() }}{{/if}} {{#if input.tooltip && typeof input.tooltip == "string" && input.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{input.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
                       {{#if input.type == "range"}}
                       <range-input config={{input}}  />
                       {{elseif input.type == "multifield"}}
@@ -44,6 +43,10 @@ Ractive.components["form-builder"] = Ractive.extend({
     if (!window[this.get("global_variable")]) {
       window[this.get("global_variable")] = {};
     }
+    if(!window.ractive_forms){
+      window.ractive_forms = []
+    }
+    window.ractive_forms.push(this)
     let self = this;
     window.formT = this;
     let form = this.find("form");
@@ -70,6 +73,11 @@ Ractive.components["divider"] = Ractive.extend({
 Ractive.components["range-input"] = Ractive.extend({
   data: { selected_step: 1 },
   template: `
+
+  {{#if !config.noLabel}}
+  <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
+  {{/if}}
+
         <div class="input-group mb-3">
             <span class="input-group-text">{{#if config.rangeLabels && config.rangeLabels[0]}} {{config.rangeLabels[0]}} {{else}} from {{/if}}</span>
                 <input type="number" id="{{config.field + '_from'}}" class="form-control" step="{{selected_step}}" value="{{values.from}}" on-input="@this.precisionValidation(@node)"  >
@@ -130,6 +138,7 @@ Ractive.components["range-input"] = Ractive.extend({
             new_field.push(+i);
           }
         }
+        this.root.set(`formData.${this.get("config.field")}`, newData) = new_field
         window[this.parent.get("global_variable")][this.get("config.field")] =
           new_field;
       }
@@ -144,6 +153,10 @@ Ractive.components["date-input"] = Ractive.extend({
     },
   },
   template: `
+  {{#if !config.noLabel}}
+  <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
+  {{/if}}
+
     {{#if config.range}}
         <div class="input-group mb-3">
             <label class="input-group-text">From:</label>
@@ -167,6 +180,7 @@ Ractive.components["date-input"] = Ractive.extend({
       if (newValue.to) {
         window[this.parent.get("global_variable")][this.get("config.field")] =
           newValue;
+          this.root.set(`formData.${this.get("config.field")}`, newValue)
       }
     });
   },
@@ -227,6 +241,9 @@ Ractive.components["select-input"] = Ractive.extend({
     selectedValues: [],
   },
   template: `
+  {{#if !config.noLabel}}
+  <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
+  {{/if}}
             <select class="form-select" id="{{config.field}}" value="{{value}}">  
                 {{#each config.options as option}}
                     {{#if typeof option == "string"}}
@@ -262,6 +279,7 @@ Ractive.components["select-input"] = Ractive.extend({
           }
           window[this.parent.get("global_variable")][this.get("config.field")] =
             this.get("selectedValues");
+            this.root.set(`formData.${this.get("config.field")}`, this.get("selectedValues"))
         } else {
           window[this.parent.get("global_variable")][this.get("config.field")] =
             newValue;
@@ -343,10 +361,12 @@ Ractive.components["dropdown-input"] = Ractive.extend({
         this.toggleItem(newValue[0]);
         window[this.parent.get("global_variable")][this.get("config.field")] =
           newValue[0];
+          this.root.set(`formData.${this.get("config.field")}`,newValue[0])
       } else {
         this.toggleItem(newValue);
         window[this.parent.get("global_variable")][this.get("config.field")] =
           this.get("selectedItems");
+          this.root.set(`formData.${this.get("config.field")}`, this.get("selectedItems"))
       }
     });
 
@@ -355,6 +375,10 @@ Ractive.components["dropdown-input"] = Ractive.extend({
 });
 Ractive.components["checkbox-input"] = Ractive.extend({
   template: `
+  {{#if !config.noLabel}}
+  <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
+  {{/if}}
+
 <div class="form-check">
  <input class="form-check-input" type="checkbox" {{#if config.defaultValue}} checked="" {{/if}}  on-change="@this.valueChanged(@event)" id="flexCheckDefault">
  <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }} {{/if}}</label>
@@ -364,14 +388,19 @@ Ractive.components["checkbox-input"] = Ractive.extend({
     console.log("VALUE_CHANGED", ev.target.checked);
     window[this.parent.get("global_variable")][this.get("config.field")] =
       ev.target.checked;
+      this.root.set(`formData.${this.get("config.field")}`, ev.target.checked)
   },
   oncomplete: function () {
     window[this.parent.get("global_variable")][this.get("config.field")] =
       this.get("config.defaultValue");
+      this.root.set(`formData.${this.get("config.field")}`, this.get("config.defaultValue") )
   },
 });
 Ractive.components["text-input"] = Ractive.extend({
   template: `
+  {{#if !config.noLabel}}
+  <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
+  {{/if}}
   <div class="input-group mb-3">
   {{#if config.button && (!config.button.side || config.button.side=="left")}}
     <button class="btn btn-outline-{{config.button.type || 'secondary'}}" type="button">{{config.button.text}}</button>
@@ -385,51 +414,79 @@ Ractive.components["text-input"] = Ractive.extend({
 });
 Ractive.components["multifield"] = Ractive.extend({
   data: {
+    condition:true,
     config_item: {
       field: "Item",
       button: { text: "Delete", side: "right", type: "danger" },
-    },
-    items: [{ value: { from: "00:00", to: "24:00" } }],
+    }
   },
+  isolated:true,
   template: `
-    {{#each items as item}}
+  {{#if condition}}
+  {{#if !config.noLabel}}
+  <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
+  {{/if}}
+
+    {{#each items as item:index}}
       <div class="input-group mb-3">
       {{#if config_item.button && (!config_item.button.side || config_item.button.side=="left")}}
-        <button class="btn btn-outline-{{config_item.button.type || 'secondary'}}" type="button">{{config_item.button.text}}</button>
+        <button on-click="@this.deleteItem(index)" class="btn btn-outline-{{config_item.button.type || 'secondary'}}" type="button">{{config_item.button.text}}</button>
       {{/if}}
         <input type="text" id="{{config_item.field}}" class="form-control" placeholder="{{config_item.placeholder}}" value="{{item.value.from}}"/>
         <input type="text" id="{{config_item.field}}" class="form-control" placeholder="{{config_item.placeholder}}" value="{{item.value.to}}"/>
       {{#if config_item.button &&  config_item.button.side=="right"}}
-        <button class="btn btn-outline-{{config_item.button.type || 'secondary'}}" type="button">{{config_item.button.text}}</button>
+        <button on-click="@this.deleteItem(index)" class="btn btn-outline-{{config_item.button.type || 'secondary'}}" type="button">{{config_item.button.text}}</button>
       {{/if}}
       </div>
     {{/each}}
-  
-      <button on-click="@this.addItem()" type="button" id="add_item" class="btn btn-outline-info">Add +</button>
+
+      <button on-click="@this.addItem()" type="button"  class="btn btn-outline-info">Add +</button>
+      {{/if}}
   `,
   addItem: function () {
-    this.push("items", { value: "" });
+    this.push("items", {})
+    let itemsLen = this.get("items").length - 1
+    this.set(`items.${itemsLen}`, {value:{from:"00:00",to:"24:00"} })
   },
-  deleteItem: function () {},
+  deleteItem:function(index){
+    this.splice("items", index, 1);
+  },
   onrender: function () {
-    window.multifield = this;
+    if(!window.multifield){
+      window.multifield = {}
+    }
+    window.multifield[this.get("config.field")] = this
+
+    this.set("items",[{ value: { from: "00:00", to: "24:00" } }] )
+
+
     this.observe("items", (newVal, oldVal) => {
       //Items value == data
       let temp_data = newVal.map((item) => {
         return { ...item.value };
       });
       this.set("data", temp_data);
-
-      //Delete Item
-      let buttons = this.findAll("button");
-      buttons.forEach((btn, index) => {
-        if (btn.getAttribute("id") != "add_item") {
-          btn.onclick = () => {
-            this.splice("items", index, 1);
-          };
-        }
-      });
     });
+    
+    this.root.observe("formData", (newVal,oldVal)=>{
+      if(this.get("config.condition")){
+        let cond =this.get("config.condition")
+        if(newVal[cond.trigger] != undefined){
+          if(newVal[cond.trigger] == cond.value){
+            if(cond.type=="display"){
+              this.set("condition",true)
+            }
+            if(cond.type == "disable"){
+              this.set("condition",true)
+            }
+          }
+          else{
+            this.set("condition",false)
+          }
+        }
+
+      } 
+    })
 
     this.observe("data", (newVal, oldVal) => {
       let newData = newVal;
@@ -440,7 +497,7 @@ Ractive.components["multifield"] = Ractive.extend({
           newData[index].to = el.to.replaceAll(":", "");
         });
       }
-
+      this.root.set(`formData.${this.get("config.field")}`, newData)
       window[this.parent.get("global_variable")][this.get("config.field")] =
         newData;
     });

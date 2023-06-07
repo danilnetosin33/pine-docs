@@ -22,7 +22,7 @@ app.listen(port, (err) => {
   if (err) {
     console.log("ERROR", err);
   } else {
-    open(`http://localhost:${port}/`);
+    //open(`http://localhost:${port}/`);
   }
 });
 app.use(express.static(__dirname));
@@ -53,20 +53,31 @@ app.post("/calculate", function (req, res) {
       (el) => +el.time + "000" >= date_from && +el.time + "000" < date_to
     );
     //FILTER BARS BY TRADING HOURS
-
     if (
       settings.dataSettings.timeframe != "1D" &&
       settings.dataSettings.timeframe != "1W" &&
       settings.dataSettings.timeframe != "1M"
     ) {
-      bars_data = bars_data.filter((el) => {
+      let gmt = settings.dataSettings.timezone;
+      gmt = Number(gmt.replace("GMT", ""));
+      console.log("GMT", gmt);
+      //ADD LOGIC UTC
+      bars_data = bars_data.filter((el, index) => {
         let date = new Date(Number(el.time + "000"));
-        let hours = date.getHours();
         let day = date.getDay();
+        let hours = date.getUTCHours() + gmt;
+        if (hours < 0) {
+          hours = 24 + hours;
+          day--;
+        } else if (hours > 24) {
+          hours = hours - 24;
+          day++;
+        }
         hours = hours.toString();
         if (hours.length == 1) {
           hours = "0" + hours;
         }
+
         let minutes = date.getMinutes();
         minutes = minutes.toString();
         if (minutes.length == 1) {
@@ -99,7 +110,7 @@ app.post("/calculate", function (req, res) {
       });
     }
 
-    bars_data = bars_data.reverse();
+    // bars_data = bars_data.reverse();
     allSymbolsBars[symbol] = bars_data;
   });
 
@@ -176,8 +187,6 @@ app.post("/calculate", function (req, res) {
     }
 
     // console.time(`CALC_${symbol_bars}`);
-
-    console.log("DDDD", symbol_bars.length, allSymbolsBars[symbol_bars].length);
 
     // build arr [[]]
     // for each

@@ -296,17 +296,19 @@ window.exportRactive = new Ractive({
 window.dataRactive = new Ractive({
             el: "#dataSettings",
             data:{
+                formData:{},
                 global_variable:"DATA_SETTINGS",
                 fields: [
-                    {field:"trading_hours", type:"multifield"},
-                    {field: "isAdvancedTradingHours", label: "Advanced trading hours", type: "checkbox" , defaultValue : false },
-                    {field:"sunday_trading_hours", type:"multifield"},
-                    {field:"monday_trading_hours", type:"multifield"},
-                    {field:"tuesday_trading_hours", type:"multifield"},
-                    {field:"wednesday_trading_hours", type:"multifield"},
-                    {field:"thursday_trading_hours", type:"multifield"},
-                    {field:"friday_trading_hours", type:"multifield"},
-                    {field:"saturday_trading_hours", type:"multifield"},
+                    {field:"timezone",type:"select", options:["GMT-12","GMT-11","GMT-10","GMT-9","GMT-8","GMT-7","GMT-6","GMT-5","GMT-4","GMT-3","GMT-2","GMT-1","GMT0","GMT+1","GMT+2","GMT+3","GMT+4","GMT+5","GMT+6","GMT+7","GMT+8","GMT+9","GMT+10","GMT+11","GMT+12","GMT+13"]},
+                    {field:"trading_hours", type:"multifield", condition:{type:"disable",trigger:"isAdvancedTradingHours",value:false}},
+                    {field: "isAdvancedTradingHours",label:"Advanced trading hours", noLabel:true, type: "checkbox" , defaultValue : true },
+                    {field:"sunday_trading_hours", type:"multifield",  condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},
+                    {field:"monday_trading_hours", type:"multifield",condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},
+                    {field:"tuesday_trading_hours", type:"multifield",condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},
+                    {field:"wednesday_trading_hours", type:"multifield",condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},
+                    {field:"thursday_trading_hours", type:"multifield",condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},
+                    {field:"friday_trading_hours", type:"multifield",condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},
+                    {field:"saturday_trading_hours", type:"multifield",condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},
                     {field:"symbols", multiple:true,type:"select", options:["NQ","ES","AAPL","AMZN","GOOGL","MSFT","NVDA","TSLA" ]},
                     {field:"timeframe", type:"select", options:[{value:"",text:"Select timeframe..."},"1H","4H","1D","1W","1M","1min","3min","5min" ]},
                     {field:"date", type:"date",range:true}
@@ -337,7 +339,8 @@ window.configRactive = new Ractive({
                 fields: [
                     {field:"barsClose", label:"Bars",type:"range", tooltip:"Exit trade after this amount of bars"},
                     {field:"barsCloseReversal", label:"Minimum Bars", type:"range", tooltip: "Amount of bars to wait until listen to close by reversal trigger"},
-                    {field:"barsIgnore",label:"Bars Ignore", type:"range",tooltip:"How much bars ignore after last trade closed"},
+                    {field:"barsIgnore",label:"Bars Ignore(After Open Order)", type:"range",tooltip:"How much bars ignore after last trade opened"},
+                    {field:"barsIgnoreClose",label:"Bars Ignore(After Close Order)", type:"range",tooltip:"How much bars ignore after last trade closed?"},
                     {field:"profitPercantage",label:"Profit", type:"range", steps:true},
                     {field:"orderCall",label:"Order Call", type:"select", options:["Both","Long Only","Short Only"]},
                     { field: "enableCCI", label: "Enable CCI?", type: "checkbox" , defaultValue : true },

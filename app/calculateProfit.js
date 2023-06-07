@@ -2,16 +2,19 @@ export default function calculateProfit(config) {
   // console.log("CONFIG", config);
   // TODO calculate CCI
 
-  let len = config.cciLength; // parametr
-  let valueCCI = config.valueCCI;
-
   // console.log("MA", ma, "DEV", dev, "CCI", cci);
 
+  //CCI setttings
+  let len = config.cciLength; // parametr
+  let valueCCI = config.valueCCI;
   // Config settings
+  let timeframe = config.bars[0].timeframe;
+  let isintraday = timeframe.includes("H") || timeframe.includes("min");
   let orderCall = config.orderCall || "Both";
   let barsCloseReversal = config.barsCloseReversal || 5;
   let barsClose = config.barsClose || 5;
   let barsIgnore = config.barsIgnore || 5;
+  let barsIgnoreClose = config.barsIgnoreClose || 5;
   let profitPercantage = config.profitPercantage || 5;
   let order = 1000;
 
@@ -85,31 +88,16 @@ export default function calculateProfit(config) {
     // COUNT CCI
     let cci = undefined;
     let src = undefined;
-    let isEnableCCICriteria =
-      config.cciLength && config.cciValue && close > len;
-
-    // console.log(
-    //   "criteria",
-    //   isEnableCCICriteria,
-    //   config.cciLength,
-    //   config.cciValue,
-    //   bar_index > len
-    // );
-    if (isEnableCCICriteria) {
-      // TODO HERE
-      src = close.slice(bar_index - len, bar_index);
-
+    let isEnableCCICriteria = bar_index > len; // config.cciLength && config.cciValue && close > len;
+    if (isEnableCCICriteria && bar_index) {
+      src = close.slice(bar_index - len + 1, bar_index + 1);
       let ma = src.reduce((a, b) => a + b, 0) / len;
       let dev =
         src.map((el) => Math.abs(el - ma)).reduce((a, b) => a + b, 0) / len;
-
-      // cci = (close - ma) / (0.015 * ta.dev(close, 3))
-      cci = (src[2] - ma) / (0.015 * dev);
-      console.log("CCI", cci);
+      cci = (close[bar_index] - ma) / (0.015 * dev);
     }
-
-    var conditionCloseLong = cci > valueCCI;
-    let conditionCloseShort = cci < -1 * valueCCI;
+    var conditionCloseLong = isEnableCCICriteria ? cci > valueCCI : true;
+    let conditionCloseShort = isEnableCCICriteria ? cci < -1 * valueCCI : true;
     let conditionCCIEnterLong = isEnableCCICriteria
       ? !conditionCloseLong
       : true;
@@ -118,7 +106,6 @@ export default function calculateProfit(config) {
       : true;
 
     //cci
-
     //LONG
     if (
       low[bar_index] < low[bar_index - 1] &&
@@ -178,10 +165,19 @@ export default function calculateProfit(config) {
         ? bar_index >=
           arrayStatistics[arrayStatistics.length - 1].barIndex + barsIgnore
         : true;
+    let condBarsIgnoreAfterClose =
+      arrayStatistics.length > 0 && isintraday
+        ? bar_index - arrayStatistics[arrayStatistics.length - 1].barIndexExit >
+          barsIgnoreClose
+        : true;
 
     // LONG
-    // inDateRange && condBarsIgnore
-    if (bullish_TAR && condBarsIgnore && conditionCCIEnterLong) {
+    if (
+      bullish_TAR &&
+      condBarsIgnore &&
+      conditionCCIEnterLong &&
+      condBarsIgnoreAfterClose
+    ) {
       let countEntryPrice =
         open[bar_index] > high[bar_index - 1]
           ? open[bar_index]
@@ -201,8 +197,12 @@ export default function calculateProfit(config) {
       lastLow = low[bar_index - 1];
     }
     // SHORT
-    //  inDateRange && condBarsIgnore
-    if (bearish_TAR && condBarsIgnore && conditionCCIEnterShort) {
+    if (
+      bearish_TAR &&
+      condBarsIgnore &&
+      conditionCCIEnterShort &&
+      condBarsIgnoreAfterClose
+    ) {
       let countEntryPrice =
         low[bar_index - 1] > open[bar_index]
           ? open[bar_index]
@@ -222,7 +222,6 @@ export default function calculateProfit(config) {
       arrayStatistics.push(addItem);
       lastHigh = high[bar_index - 1];
     }
-
     //CLOSED BY SL
     //LONG
     if (low[bar_index] < lastLow && entryBarindexLong.length > 0) {
@@ -494,64 +493,54 @@ export default function calculateProfit(config) {
       entryPriceLong.length > 0
     ) {
       for (let i = entryPriceLong.length - 1; i >= 0; i--) {
-        countClosedByCCICriteriaLong += 1;
-        totalProfit += countTakeProfitPerTrade(
-          array.get(entryPriceLong, i),
-          close,
-          order
-        );
-        elIndex = findIndexByBarIndex(
+        let elIndex = findIndexByBarIndex(
           arrayStatistics,
-          array.get(entryBarindexLong, i)
+          entryBarindexLong[i]
         );
-        el = array.get(arrayStatistics, elIndex);
-        //str.format("{0,date,HH:mm:ss dd/MM/yyyy}", time)
-        el.timeExit = time;
-        el.signalExit = "CCI Long";
-        el.exitPrice = close;
-        el.profit = countTakeProfitPerTrade(
-          array.get(entryPriceLong, i),
-          close,
-          order
-        );
-        el.barIndexExit = bar_index;
+        arrayStatistics[elIndex] = {
+          ...arrayStatistics[elIndex],
+          timeExit: time,
+          signalExit: "CCI Long",
+          exitPrice: close[bar_index],
+          profit: countTakeProfitPerTrade(
+            entryPriceLong[i],
+            close[bar_index],
+            order
+          ),
+          barIndexExit: bar_index,
+        };
       }
+      entryPriceLong = [];
+      entryBarindexLong = [];
     }
 
     //array.set(arrayStatistics , elIndex , el   )
-    entryPriceLong = [];
-    entryBarindexLong = [];
 
     // // SHORT
     if (
       conditionCloseShort &&
       isEnableCCICriteria &&
-      entryBarindexShort.size() > 0 &&
-      entryPriceShort.size() > 0
+      entryBarindexShort.length > 0 &&
+      entryPriceShort.length > 0
     ) {
       for (let i = entryPriceShort.length - 1; i >= 0; i--) {
-        totalProfit += countTakeProfitPerTrade(
-          array.get(entryPriceShort, i),
-          close,
-          order
-        );
-        elIndex = findIndexByBarIndex(
+        let elIndex = findIndexByBarIndex(
           arrayStatistics,
-          array.get(entryBarindexShort, i)
+          entryBarindexShort[i]
         );
-        el = array.get(arrayStatistics, elIndex);
-        //str.format("{0,date,HH:mm:ss dd/MM/yyyy}", time)
-        el.timeExit = time;
-        el.signalExit = "CCI Short";
-        el.exitPrice = close;
-        el.profit = countTakeProfitPerTrade(
-          array.get(entryPriceShort, i),
-          close,
-          order
-        );
-        el.barIndexExit = bar_index;
+        arrayStatistics[elIndex] = {
+          ...arrayStatistics[elIndex],
+          timeExit: time,
+          signalExit: "CCI Short",
+          exitPrice: close[bar_index],
+          profit: countTakeProfitPerTrade(
+            entryPriceShort[i],
+            close[bar_index],
+            order
+          ),
+          barIndexExit: bar_index,
+        };
       }
-
       entryPriceShort = [];
       entryBarindexShort = [];
     }
@@ -574,6 +563,7 @@ export default function calculateProfit(config) {
       closed.unclosed += 1;
     }
   });
+
   // console.log("All orders :", arrayStatistics.length);
   // console.log("PROFIT : ", profit);
   // console.log("Orders status: ", closed);
