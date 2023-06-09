@@ -93,6 +93,7 @@ Ractive.components["range-input"] = Ractive.extend({
                         {{else}}
                             <option value="1" selected>1</option>
                             <option value="0.1">0.1</option>
+                            <option value="0.25">0.25</option>
                         {{/if}}
                     </select>
             {{/if}}
@@ -131,10 +132,32 @@ Ractive.components["range-input"] = Ractive.extend({
         ) {
           let new_i = +i;
           if (i.toString().includes(".")) {
-            new_i = new_i.toString().split(".");
-            new_i.shift();
-            new_i = new_i.length;
-            new_field.push(+i.toFixed(new_i));
+            // new_i = new_i.toString().split(".");
+            // new_i.shift();
+            // new_i = new_i.length;
+            new_field.push(+i.toFixed(3));
+          } else {
+            new_field.push(+i);
+          }
+        }
+        this.root.set(`formData.${this.get("config.field")}`, new_field);
+        window[this.parent.get("global_variable")][this.get("config.field")] =
+          new_field;
+      }
+    });
+
+    this.observe("selected_step", (newVal, oldVal) => {
+      let values = this.get("values");
+
+      if (values.to >= 0) {
+        var new_field = [];
+        for (var i = +values.from; i <= +values.to; i += Number(newVal)) {
+          let new_i = +i;
+          if (i.toString().includes(".")) {
+            // new_i = new_i.toString().split(".");
+            // new_i.shift();
+            // new_i = new_i.length;
+            new_field.push(+i.toFixed(3));
           } else {
             new_field.push(+i);
           }
