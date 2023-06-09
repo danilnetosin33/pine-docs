@@ -1,5 +1,5 @@
 export default function calculateProfit(config) {
-  // console.log("CONFIG", config);
+  if (config.bars.length == 0) return;
   // TODO calculate CCI
 
   // console.log("MA", ma, "DEV", dev, "CCI", cci);
@@ -8,7 +8,8 @@ export default function calculateProfit(config) {
   let len = config.cciLength; // parametr
   let valueCCI = config.valueCCI;
   // Config settings
-  let timeframe = config.bars[0].timeframe;
+
+  let timeframe = config["bars"][0].timeframe;
   let isintraday = timeframe.includes("H") || timeframe.includes("min");
   let orderCall = config.orderCall || "Both";
   let barsCloseReversal = config.barsCloseReversal || 5;

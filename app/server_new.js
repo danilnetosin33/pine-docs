@@ -42,16 +42,16 @@ app.post("/calculate", function (req, res) {
   symbols.forEach(async (symbol) => {
     let path = `./assets/JSON/${symbol}/${symbol}, ${settings.dataSettings.timeframe}.json`;
     let bars_data = require(path);
-
-    //console.log("BARS_PATH" , path)
-    // console.log("BARS_DATA", bars_data);
-
+    console.log("BAR1", bars_data.length);
     //FILTER BARS BY DATE RANGE
     let date_from = new Date(settings.dataSettings.date.from).getTime();
     let date_to = new Date(settings.dataSettings.date.to).getTime();
     bars_data = bars_data.filter(
       (el) => +el.time + "000" >= date_from && +el.time + "000" < date_to
     );
+
+    console.log("BAR2", bars_data.length);
+
     //FILTER BARS BY TRADING HOURS
     if (
       settings.dataSettings.timeframe != "1D" &&
@@ -60,7 +60,6 @@ app.post("/calculate", function (req, res) {
     ) {
       let gmt = settings.dataSettings.timezone;
       gmt = Number(gmt.replace("GMT", ""));
-      console.log("GMT", gmt);
       //ADD LOGIC UTC
       bars_data = bars_data.filter((el, index) => {
         let date = new Date(Number(el.time + "000"));
@@ -109,6 +108,7 @@ app.post("/calculate", function (req, res) {
         }
       });
     }
+    console.log("BAR3", bars_data.length);
 
     // bars_data = bars_data.reverse();
     allSymbolsBars[symbol] = bars_data;
@@ -142,8 +142,6 @@ app.post("/calculate", function (req, res) {
     configSettings.cciValue = settings.configSettings.cciValue;
   }
 
-  console.log("RESULT", configSettings);
-
   // CASE ADD CCI
 
   // CHECK profit => if profit == 0  => delete from params
@@ -152,10 +150,6 @@ app.post("/calculate", function (req, res) {
   console.time("Build_params");
   let fullResult = buildParams(configSettings); // less options => add profit : 0 ,
   let arrParams = fullResult.resultModified;
-
-  console.log("QQQQ", arrParams.length);
-
-  // console.log(arrParams[0]);
 
   console.timeEnd("Build_params");
   let alias = fullResult.alias;
@@ -192,7 +186,6 @@ app.post("/calculate", function (req, res) {
     // for each
 
     arrWorkers.forEach((arr, arrIndex) => {
-      console.log(allSymbolsBars[symbol_bars].slice().length);
       let worker = new Worker("./webworker_calculate.js", {
         workerData: {
           arr,
@@ -222,40 +215,55 @@ app.post("/calculate", function (req, res) {
           });
           res.json(results);
           console.timeEnd("Total_calc");
-          console.log("RESULTS:", Object.keys(results));
+          console.log(
+            "RESULTS:",
+            Object.keys(results),
+            Object.values(results).length
+          );
           //       console.timeEnd(`CALC_${symbol_bars}`);
         }
         console.log(`Worker : `, counter);
       });
     });
-
-    // async.eachOfLimit(arrParams, 100, (arr, arrIndex, cb) => {
-    //   if (startPartNumber + arrIndex >= percentPart * countParts) {
-    //     countParts += 1;
-    //     console.log("OVER 5%", countParts * 5);
-    //   }
-
-    //   try {
-    //     buildResult(
-    //       results,
-    //       arr,
-    //       alias,
-    //       configSettings,
-    //       symbol_bars,
-    //       allSymbolsBars[symbol_bars]
-    //     );
-    //     //cb();
-    //   } catch (err) {
-    //     //cb(err);
-    //   }
-    // });
-    // .then(() => {
-    //   res.json(results);
-    // })
-    // .catch((err) => {
-    //   console.log("ERROR:", err);
-    // });
   });
+});
+
+app.get("/available_dates", (req, res) => {
+  let symbols = ["AAPL", "AMZN", "ES", "GOOGL", "MSFT", "NQ", "NVDA", "TSLA"];
+  let timeframes = ["1H", "4H", "1D", "1W", "1M", "1min", "3min", "5min"];
+  let available_dates = {};
+  symbols.forEach((symbol) => {
+    if (!available_dates[symbol]) {
+      available_dates[symbol] = {};
+    }
+    timeframes.forEach((tf) => {
+      if (!available_dates[symbol][tf]) {
+        available_dates[symbol][tf] = { from: null, to: null };
+      }
+      let path = `./assets/JSON/${symbol}/${symbol}, ${tf}.json`;
+      let bars_data = require(path);
+
+      //2018-01-01
+      let start_time = new Date(Number(bars_data[0].time + "000"));
+      let end_time = new Date(
+        Number(bars_data[bars_data.length - 1].time + "000")
+      );
+
+      function parseDateStr(date) {
+        let year = String(date.getFullYear());
+        let month = String(date.getMonth() + 1);
+        month = month.length == 1 ? "0" + month : month;
+        let day = String(date.getDate());
+        day = day.length == 1 ? "0" + day : day;
+
+        return `${year}-${month}-${day}`;
+      }
+
+      available_dates[symbol][tf].from = parseDateStr(start_time);
+      available_dates[symbol][tf].to = parseDateStr(end_time);
+    });
+  });
+  res.json(available_dates);
 });
 
 function buildParams(params) {

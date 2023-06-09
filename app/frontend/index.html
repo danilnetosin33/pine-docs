@@ -29,6 +29,9 @@
     </div>  
 
     <script>
+        fetch("/available_dates").then(res=>res.json()).then((res)=>{window.all_available_dates= res})
+
+
         window.DATA_SETTINGS = {}
         window.CONFIG_SETTINGS = {}
 
@@ -44,9 +47,7 @@
                     ev.target.disabled = true
                    data = { dataSettings: window.DATA_SETTINGS, configSettings:window.CONFIG_SETTINGS}
                     
-
                    window.tableProfit.set("fullData" ,  [])
-
                     fetch("/calculate", 
                     {
                         method:"POST", 
@@ -59,6 +60,7 @@
                         })
                         .then((data) => {
                             window.tableProfit.set("fullData" ,  data)
+                            window.tableProfit.update("@global")
                             ev.target.disabled = false
                         });
             
@@ -132,7 +134,7 @@ window.tableProfit  = new Ractive({
                 <tbody>
                     {{#each currentPageData}}
                         <tr>
-                            <td>{{profit}}</td>
+                            <td>{{Math.floor(profit)}}</td>
                             <td>{{orders}}</td>
                             <td>{{barsClose}}</td>
                             <td>{{barsCloseReversal}}</td>
@@ -301,7 +303,7 @@ window.dataRactive = new Ractive({
                 fields: [
                     {field:"timezone",type:"select", options:["GMT-12","GMT-11","GMT-10","GMT-9","GMT-8","GMT-7","GMT-6","GMT-5","GMT-4","GMT-3","GMT-2","GMT-1","GMT0","GMT+1","GMT+2","GMT+3","GMT+4","GMT+5","GMT+6","GMT+7","GMT+8","GMT+9","GMT+10","GMT+11","GMT+12","GMT+13"]},
                     {field:"trading_hours", type:"multifield", condition:{type:"disable",trigger:"isAdvancedTradingHours",value:false}},
-                    {field: "isAdvancedTradingHours",label:"Advanced trading hours", noLabel:true, type: "checkbox" , defaultValue : true },
+                    {field: "isAdvancedTradingHours",label:"Advanced trading hours", noLabel:true, type: "checkbox" , defaultValue : false },
                     {field:"sunday_trading_hours", type:"multifield",  condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},
                     {field:"monday_trading_hours", type:"multifield",condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},
                     {field:"tuesday_trading_hours", type:"multifield",condition:{type:"display",trigger:"isAdvancedTradingHours",value:true}},

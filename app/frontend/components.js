@@ -43,10 +43,10 @@ Ractive.components["form-builder"] = Ractive.extend({
     if (!window[this.get("global_variable")]) {
       window[this.get("global_variable")] = {};
     }
-    if(!window.ractive_forms){
-      window.ractive_forms = []
+    if (!window.ractive_forms) {
+      window.ractive_forms = [];
     }
-    window.ractive_forms.push(this)
+    window.ractive_forms.push(this);
     let self = this;
     window.formT = this;
     let form = this.find("form");
@@ -71,7 +71,7 @@ Ractive.components["divider"] = Ractive.extend({
     `,
 });
 Ractive.components["range-input"] = Ractive.extend({
-  data: { selected_step: 1 },
+  data: { selected_step: 1, values: { from: 0, to: 0 } },
   template: `
 
   {{#if !config.noLabel}}
@@ -118,9 +118,10 @@ Ractive.components["range-input"] = Ractive.extend({
       window[this.parent.get("global_variable")] = {};
     }
     window.comp_range = this;
-    this.set("values", { from: 0, to: 0 });
+    // this.set("values", { from: 0, to: 0 });
 
     this.observe("values", (newValue, oldValue) => {
+      console.log("VVAAAAAAAA", newValue);
       if (newValue.to >= 0) {
         var new_field = [];
         for (
@@ -138,7 +139,7 @@ Ractive.components["range-input"] = Ractive.extend({
             new_field.push(+i);
           }
         }
-        this.root.set(`formData.${this.get("config.field")}`, newData) = new_field
+        this.root.set(`formData.${this.get("config.field")}`, new_field);
         window[this.parent.get("global_variable")][this.get("config.field")] =
           new_field;
       }
@@ -148,23 +149,23 @@ Ractive.components["range-input"] = Ractive.extend({
 Ractive.components["date-input"] = Ractive.extend({
   data: {
     values: {
-      from: "2013-01-01",
-      to: "2023-01-01",
+      from: "",
+      to: "",
     },
   },
   template: `
   {{#if !config.noLabel}}
-  <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
+  <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} (mm/dd/yyyy)  {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
   {{/if}}
 
     {{#if config.range}}
         <div class="input-group mb-3">
             <label class="input-group-text">From:</label>
-            <input type="date" class="form-control" id="{{config.field + "_from"}}"  value="{{values.from}}"  />
+            <input type="date" class="form-control" id="{{config.field + "_from"}}" min="{{min_value}}" max="{{max_value}}" value="{{values.from}}"  />
         </div>  
         <div class="input-group mb-3">
             <label class="input-group-text">To:</label>
-            <input type="date" class="form-control" id="{{config.field + "_to"}}"  value="{{values.to}}" />
+            <input type="date" class="form-control" id="{{config.field + "_to"}}" min="{{min_value}}" max="{{max_value}}"  value="{{values.to}}" />
         </div>  
     {{else}}
     <label class="form-label" >{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }} {{/if}}</label>
@@ -175,12 +176,29 @@ Ractive.components["date-input"] = Ractive.extend({
     if (!window[this.parent.get("global_variable")]) {
       window[this.parent.get("global_variable")] = {};
     }
-    window.comp_range = this;
+
+    window.comp_date_range = this;
+    this.root.observe(
+      "formData.symbols formData.timeframe",
+      (newValue, oldValue, path) => {
+        let symbol = this.root.get("formData.symbols.0");
+        let timeframe = this.root.get("formData.timeframe");
+        console.log("CHANGE_____", newValue, symbol, timeframe);
+        let min = all_available_dates[symbol][timeframe].from;
+        let max = all_available_dates[symbol][timeframe].to;
+
+        this.set("min_value", min);
+        this.set("max_value", max);
+        this.set("values.from", min);
+        this.set("values.to", max);
+      }
+    );
+
     this.observe("values", (newValue, oldValue) => {
       if (newValue.to) {
         window[this.parent.get("global_variable")][this.get("config.field")] =
           newValue;
-          this.root.set(`formData.${this.get("config.field")}`, newValue)
+        this.root.set(`formData.${this.get("config.field")}`, newValue);
       }
     });
   },
@@ -279,10 +297,14 @@ Ractive.components["select-input"] = Ractive.extend({
           }
           window[this.parent.get("global_variable")][this.get("config.field")] =
             this.get("selectedValues");
-            this.root.set(`formData.${this.get("config.field")}`, this.get("selectedValues"))
+          this.root.set(
+            `formData.${this.get("config.field")}`,
+            this.get("selectedValues")
+          );
         } else {
           window[this.parent.get("global_variable")][this.get("config.field")] =
             newValue;
+          this.root.set(`formData.${this.get("config.field")}`, newValue);
         }
       }
     });
@@ -361,12 +383,15 @@ Ractive.components["dropdown-input"] = Ractive.extend({
         this.toggleItem(newValue[0]);
         window[this.parent.get("global_variable")][this.get("config.field")] =
           newValue[0];
-          this.root.set(`formData.${this.get("config.field")}`,newValue[0])
+        this.root.set(`formData.${this.get("config.field")}`, newValue[0]);
       } else {
         this.toggleItem(newValue);
         window[this.parent.get("global_variable")][this.get("config.field")] =
           this.get("selectedItems");
-          this.root.set(`formData.${this.get("config.field")}`, this.get("selectedItems"))
+        this.root.set(
+          `formData.${this.get("config.field")}`,
+          this.get("selectedItems")
+        );
       }
     });
 
@@ -388,12 +413,15 @@ Ractive.components["checkbox-input"] = Ractive.extend({
     console.log("VALUE_CHANGED", ev.target.checked);
     window[this.parent.get("global_variable")][this.get("config.field")] =
       ev.target.checked;
-      this.root.set(`formData.${this.get("config.field")}`, ev.target.checked)
+    this.root.set(`formData.${this.get("config.field")}`, ev.target.checked);
   },
   oncomplete: function () {
     window[this.parent.get("global_variable")][this.get("config.field")] =
       this.get("config.defaultValue");
-      this.root.set(`formData.${this.get("config.field")}`, this.get("config.defaultValue") )
+    this.root.set(
+      `formData.${this.get("config.field")}`,
+      this.get("config.defaultValue")
+    );
   },
 });
 Ractive.components["text-input"] = Ractive.extend({
@@ -414,13 +442,13 @@ Ractive.components["text-input"] = Ractive.extend({
 });
 Ractive.components["multifield"] = Ractive.extend({
   data: {
-    condition:true,
+    condition: true,
     config_item: {
       field: "Item",
       button: { text: "Delete", side: "right", type: "danger" },
-    }
+    },
   },
-  isolated:true,
+  isolated: true,
   template: `
   {{#if condition}}
   {{#if !config.noLabel}}
@@ -444,21 +472,20 @@ Ractive.components["multifield"] = Ractive.extend({
       {{/if}}
   `,
   addItem: function () {
-    this.push("items", {})
-    let itemsLen = this.get("items").length - 1
-    this.set(`items.${itemsLen}`, {value:{from:"00:00",to:"24:00"} })
+    this.push("items", {});
+    let itemsLen = this.get("items").length - 1;
+    this.set(`items.${itemsLen}`, { value: { from: "00:00", to: "24:00" } });
   },
-  deleteItem:function(index){
+  deleteItem: function (index) {
     this.splice("items", index, 1);
   },
   onrender: function () {
-    if(!window.multifield){
-      window.multifield = {}
+    if (!window.multifield) {
+      window.multifield = {};
     }
-    window.multifield[this.get("config.field")] = this
+    window.multifield[this.get("config.field")] = this;
 
-    this.set("items",[{ value: { from: "00:00", to: "24:00" } }] )
-
+    this.set("items", [{ value: { from: "00:00", to: "24:00" } }]);
 
     this.observe("items", (newVal, oldVal) => {
       //Items value == data
@@ -467,26 +494,24 @@ Ractive.components["multifield"] = Ractive.extend({
       });
       this.set("data", temp_data);
     });
-    
-    this.root.observe("formData", (newVal,oldVal)=>{
-      if(this.get("config.condition")){
-        let cond =this.get("config.condition")
-        if(newVal[cond.trigger] != undefined){
-          if(newVal[cond.trigger] == cond.value){
-            if(cond.type=="display"){
-              this.set("condition",true)
+
+    this.root.observe("formData", (newVal, oldVal) => {
+      if (this.get("config.condition")) {
+        let cond = this.get("config.condition");
+        if (newVal[cond.trigger] != undefined) {
+          if (newVal[cond.trigger] == cond.value) {
+            if (cond.type == "display") {
+              this.set("condition", true);
             }
-            if(cond.type == "disable"){
-              this.set("condition",true)
+            if (cond.type == "disable") {
+              this.set("condition", true);
             }
-          }
-          else{
-            this.set("condition",false)
+          } else {
+            this.set("condition", false);
           }
         }
-
-      } 
-    })
+      }
+    });
 
     this.observe("data", (newVal, oldVal) => {
       let newData = newVal;
@@ -497,7 +522,7 @@ Ractive.components["multifield"] = Ractive.extend({
           newData[index].to = el.to.replaceAll(":", "");
         });
       }
-      this.root.set(`formData.${this.get("config.field")}`, newData)
+      this.root.set(`formData.${this.get("config.field")}`, newData);
       window[this.parent.get("global_variable")][this.get("config.field")] =
         newData;
     });
