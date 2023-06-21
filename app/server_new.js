@@ -39,6 +39,31 @@ app.post("/calculate", function (req, res) {
   let symbols = [...settings.dataSettings.symbols];
   let allSymbolsBars = {};
 
+  let calculate_log = {
+    time: new Date().toString(),
+    timestamp: new Date().getTime(),
+    settings: settings,
+  };
+
+  //  Add settings to log data(calculate_logs.txt)
+  fs.readFile(__dirname + "/logs/calculate_logs.txt", "utf8", (err, data) => {
+    if (err) {
+      console.log("Err sendedMessage", err);
+    } else {
+      if (data == null || data == "" || data == undefined) {
+        data = null;
+      }
+      let LOG =
+        data == null
+          ? JSON.stringify(calculate_log)
+          : data + "," + JSON.stringify(calculate_log);
+
+      fs.writeFileSync(__dirname + "/logs/calculate_logs.txt", LOG, () => {
+        console.log("SeND");
+      });
+    }
+  });
+
   symbols.forEach(async (symbol) => {
     let path = `./assets/JSON/${symbol}/${symbol}, ${settings.dataSettings.timeframe}.json`;
     let bars_data = require(path);
@@ -135,6 +160,7 @@ app.post("/calculate", function (req, res) {
   addParametr(settings.configSettings, "barsClose");
   addParametr(settings.configSettings, "barsCloseReversal");
   addParametr(settings.configSettings, "barsIgnore");
+  addParametr(settings.configSettings, "barsIgnoreClose");
   addParametr(settings.configSettings, "profitPercantage");
 
   if (settings.configSettings.enableCCI) {

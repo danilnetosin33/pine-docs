@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/ajv/8.12.0/ajv7.min.js"
+            integrity="sha512-U2SW9Ihh3GF6F8gP8QgLS+I244xnM5pFCh3cigpw7bAzUDnKDlxdlFL4kjyXTle8SJl/tJ0gdnwd44Eb3hLG/Q=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <title>Document</title>
+</head>
+<body>
+
+    <script>
+        let ajv = new window.ajv7();
+ 
+        const schema = {
+        type: "object",
+        properties: {
+            foo: {type: ["integer", "string"]},
+            bar: {type: "array",items:[{
+        type:"object",
+        properties:{
+            from: {type: "string"},
+            to:{type:"string"}
+        }}]}
+        },
+        required: ["foo"],
+        additionalProperties: false
+        }
+    
+        const validate = ajv.compile(schema)
+    
+        const data = {
+            foo: "AA",
+            bar: [{from:"aaa", to:"aAAA"},{from:"aaa", to:"aAAA"}]
+        }
+         
+      
+    
+        const valid = validate(data)
+        console.log("VALID" ,  valid)
+        if (!valid) console.log(validate.errors)
+
+    </script>
+    
+</body>
+</html>

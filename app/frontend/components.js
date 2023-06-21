@@ -1,10 +1,37 @@
+Ractive.defaults.buildSchema = function (fields) {
+  let schemaProps = {};
+  let schemaRequired = [];
+  fields.forEach((field) => {
+    if (field.ajv) {
+      let required_field = field.ajv.required;
+      delete field.ajv.required;
+      schemaProps[field.field] = { ...field.ajv };
+      if (required_field) {
+        schemaRequired.push(field.field);
+      }
+    }
+  });
+
+  const schema = {
+    type: "object",
+    properties: schemaProps,
+    required: schemaRequired,
+    additionalProperties: true,
+  };
+
+  return schema;
+};
+
 Ractive.components["form-builder"] = Ractive.extend({
+  data: {
+    errors: {},
+  },
   template: `
           <form>
               {{#each config as input}}
                   <div class="mb-3">
                       {{#if input.type == "range"}}
-                      <range-input config={{input}}  />
+                      <range-input config={{input}} error={{errors[input.field]}} />
                       {{elseif input.type == "multifield"}}
                         <multifield config="{{input}}"/>
                       {{elseif input.type == "text"}}
@@ -12,11 +39,11 @@ Ractive.components["form-builder"] = Ractive.extend({
                       {{elseif input.type == "divider"}}
                         <divider config={{input}} />
                       {{elseif input.type == "select"}}
-                        <select-input config={{input}} />
+                        <select-input config={{input}} error={{errors[input.field]}}/>
                       {{elseif input.type == "dropdown"}}
                         <dropdown-input config={{input}} />
                       {{elseif input.type == "date"}}
-                        <date-input config={{input}} />
+                        <date-input config={{input}} error={{errors[input.field]}} />
                       {{elseif input.type == "checkbox"}}
                          <checkbox-input config={{input}} />
                       {{/if}}
@@ -24,12 +51,37 @@ Ractive.components["form-builder"] = Ractive.extend({
               {{/each}}
   
               <div style="display:flex">
-                  <button type="button" class="btn btn-outline-danger" style="width:20%;margin-right: 1%;" id="settings_clear" on-click="@this.clearForm()">Clear</button>
-                  <button type="button" class="btn btn-primary" style="width:80%" id="settings_submit" data-bs-dismiss="modal" on-click="@this.submitForm()">Submit</button>
+                  <button type="button" class="btn btn-outline-danger" style="width:20%;margin-right: 1%;" id="settings_clear" on-click="@this.clearForm(@node)">Clear</button>
+                  <button type="button" class="btn btn-primary" style="width:80%" id="settings_submit" on-click="@this.submitForm(@node)">Submit</button>
               </div>
           </form>
       `,
-  submitForm: function () {
+  submitForm: function (node) {
+    let ajv = new window.ajv7({ strictTuples: false, allErrors: true });
+    let schema = Ractive.defaults.buildSchema(this.root.get("fields"));
+    let data = this.root.get("formData");
+    let validate = ajv.compile(schema);
+    const validation = validate(data);
+    if (validation) {
+      this.parent.get("modal").hide();
+    } else {
+      console.log(validate.errors);
+      node.disabled = true;
+      let temp_errors = {};
+      if (validate.errors && validate.errors.length > 0) {
+        validate.errors.forEach((err) => {
+          let field = err.instancePath.split("/")[1];
+          temp_errors[field] = { message: err.message };
+        });
+      }
+
+      // let errors_fields = validate.errors.map((err) =>
+      //   err.instancePath.replace("/", "")
+      // );
+      this.set("errors", temp_errors);
+    }
+    console.log("node", node);
+    console.log("validation", validation);
     console.log("SUBMIT");
   },
   clearForm: function () {
@@ -49,6 +101,7 @@ Ractive.components["form-builder"] = Ractive.extend({
     window.ractive_forms.push(this);
     let self = this;
     window.formT = this;
+    let submit_btn = this.find("#settings_submit");
     let form = this.find("form");
     let form_inputs = Array.from(form.getElementsByTagName("input"));
     let form_selects = Array.from(form.getElementsByTagName("select"));
@@ -56,12 +109,13 @@ Ractive.components["form-builder"] = Ractive.extend({
       (select) => select.getAttribute("range_select") == null
     );
     let form_fields = form_inputs.concat(form_selects);
-    let form_fields_names = this.get("config")
-      .map((el) => el.field)
-      .filter((el) => el != undefined);
-
     this.set("form_fields", form_fields);
-    this.set("form_fields_names", form_fields_names);
+
+    this.root.observe("formData", (newVal, oldVal) => {
+      submit_btn.disabled = false;
+      this.set("errors", []);
+      this.update("@global");
+    });
   },
 });
 Ractive.components["divider"] = Ractive.extend({
@@ -80,10 +134,11 @@ Ractive.components["range-input"] = Ractive.extend({
 
         <div class="input-group mb-3">
             <span class="input-group-text">{{#if config.rangeLabels && config.rangeLabels[0]}} {{config.rangeLabels[0]}} {{else}} from {{/if}}</span>
-                <input type="number" id="{{config.field + '_from'}}" class="form-control" step="{{selected_step}}" value="{{values.from}}" on-input="@this.precisionValidation(@node)"  >
+                <input type="number" min="0" id="{{config.field + '_from'}}" class="form-control {{#if error}}is-invalid{{/if}}" step="{{selected_step}}" value="{{values.from}}" on-input="@this.precisionValidation(@node)"  >
             <span class="input-group-text">{{#if config.rangeLabels && config.rangeLabels[1]}} {{config.rangeLabels[1]}} {{else}} to {{/if}}</span>
-                <input type="number" id="{{config.field + '_to' }}" class="form-control" step="{{selected_step}}" value="{{values.to}}" on-input="@this.precisionValidation(@node)">
-            {{#if config.steps}}
+                <input type="number" min="0" id="{{config.field + '_to' }}" class="form-control  {{#if error}}is-invalid{{/if}}" step="{{selected_step}}" value="{{values.to}}" on-input="@this.precisionValidation(@node)">
+
+                {{#if config.steps}}
                 <span class="input-group-text">step</span>
                     <select style="width: max-content;" class="input-group-text " value="{{selected_step}}" range_select="true" >
                         {{#if Array.isArray(config.steps)}}
@@ -97,7 +152,11 @@ Ractive.components["range-input"] = Ractive.extend({
                         {{/if}}
                     </select>
             {{/if}}
+            <div class="invalid-feedback">
+            {{#if error && error.message}}{{error.message}}{{else}}Value is not correct!{{/if}}
+          </div>
         </div>
+
     `,
   precisionValidation: function (node) {
     let value = node.value;
@@ -121,30 +180,47 @@ Ractive.components["range-input"] = Ractive.extend({
     window.comp_range = this;
     // this.set("values", { from: 0, to: 0 });
 
-    this.observe("values", (newValue, oldValue) => {
-      console.log("VVAAAAAAAA", newValue);
-      if (newValue.to >= 0) {
-        var new_field = [];
-        for (
-          var i = +newValue.from;
-          i <= +newValue.to;
-          i += Number(this.get("selected_step"))
-        ) {
-          let new_i = +i;
-          if (i.toString().includes(".")) {
-            // new_i = new_i.toString().split(".");
-            // new_i.shift();
-            // new_i = new_i.length;
-            new_field.push(+i.toFixed(3));
-          } else {
-            new_field.push(+i);
-          }
+    this.observe(
+      "values",
+      (newValue, oldValue) => {
+        // ERROR HANDLE
+        if (newValue.from > newValue.to) {
+          this.set("error", { message: "FROM cannot be greater than TO" });
+          this.parent.find("#settings_submit").disabled = true;
+          return;
+        } else if (newValue.from == newValue.to) {
+          this.set("error", { message: "FROM cannot be equal TO" });
+          this.parent.find("#settings_submit").disabled = true;
+          return;
+        } else {
+          this.set("error", false);
+          this.parent.find("#settings_submit").disabled = false;
         }
-        this.root.set(`formData.${this.get("config.field")}`, new_field);
-        window[this.parent.get("global_variable")][this.get("config.field")] =
-          new_field;
-      }
-    });
+
+        if (newValue.to >= 0) {
+          var new_field = [];
+          for (
+            var i = +newValue.from;
+            i <= +newValue.to;
+            i += Number(this.get("selected_step"))
+          ) {
+            let new_i = +i;
+            if (i.toString().includes(".")) {
+              // new_i = new_i.toString().split(".");
+              // new_i.shift();
+              // new_i = new_i.length;
+              new_field.push(+i.toFixed(3));
+            } else {
+              new_field.push(+i);
+            }
+          }
+          this.root.set(`formData.${this.get("config.field")}`, new_field);
+          window[this.parent.get("global_variable")][this.get("config.field")] =
+            new_field;
+        }
+      },
+      { init: false }
+    );
 
     this.observe("selected_step", (newVal, oldVal) => {
       let values = this.get("values");
@@ -180,20 +256,28 @@ Ractive.components["date-input"] = Ractive.extend({
   {{#if !config.noLabel}}
   <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} (mm/dd/yyyy)  {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
   {{/if}}
-
+  <div>
     {{#if config.range}}
         <div class="input-group mb-3">
             <label class="input-group-text">From:</label>
-            <input type="date" class="form-control" id="{{config.field + "_from"}}" min="{{min_value}}" max="{{max_value}}" value="{{values.from}}"  />
-        </div>  
+            <input type="date" class="form-control {{#if error}}is-invalid{{/if}}" id="{{config.field + "_from"}}" min="{{min_value}}" max="{{max_value}}" value="{{values.from}}"  />
+            </div>  
         <div class="input-group mb-3">
             <label class="input-group-text">To:</label>
-            <input type="date" class="form-control" id="{{config.field + "_to"}}" min="{{min_value}}" max="{{max_value}}"  value="{{values.to}}" />
-        </div>  
+            <input type="date" class="form-control {{#if error}}is-invalid{{/if}}" id="{{config.field + "_to"}}" min="{{min_value}}" max="{{max_value}}"  value="{{values.to}}" />
+            <div class="invalid-feedback">
+              {{#if error && error.message}}{{error.message}}{{else}}Value is not correct!{{/if}}
+            </div>
+            </div>  
     {{else}}
     <label class="form-label" >{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }} {{/if}}</label>
-        <input type="date" class="form-control" id="{{config.field}}"  />
+        <input type="date" class="form-control {{#if error}}is-invalid{{/if}}" id="{{config.field}}"  />
+        <div class="invalid-feedback">
+          {{#if error && error.message}}{{error.message}}{{else}}Value is not correct!{{/if}}
+        </div>
     {{/if}}
+    </div>
+  
     `,
   onrender: function () {
     if (!window[this.parent.get("global_variable")]) {
@@ -218,6 +302,23 @@ Ractive.components["date-input"] = Ractive.extend({
     );
 
     this.observe("values", (newValue, oldValue) => {
+      console.log("DATE_OBS", newValue);
+      let from_timestamp = new Date(newValue.from).getTime();
+      let to_timestamp = new Date(newValue.to).getTime();
+
+      if (from_timestamp > to_timestamp) {
+        this.set("error", { message: "FROM cannot be greater than TO" });
+        this.parent.find("#settings_submit").disabled = true;
+        return;
+      } else if (from_timestamp == to_timestamp) {
+        this.set("error", { message: "FROM cannot be equal TO" });
+        this.parent.find("#settings_submit").disabled = true;
+        return;
+      } else {
+        this.set("error", false);
+        this.parent.find("#settings_submit").disabled = false;
+      }
+
       if (newValue.to) {
         window[this.parent.get("global_variable")][this.get("config.field")] =
           newValue;
@@ -285,7 +386,7 @@ Ractive.components["select-input"] = Ractive.extend({
   {{#if !config.noLabel}}
   <label class="form-label">{{#if config.label}} {{config.label}} {{else}} {{ config.field.charAt(0).toUpperCase() + config.field.slice(1).toLowerCase() }}{{/if}} {{#if config.tooltip && typeof config.tooltip == "string" && config.tooltip != ""}} <a style="margin-left:0.5em" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="{{config.tooltip}}" > <i class="fa-sharp fa-solid fa-circle-info" style="color: #8f8f8f"></i> </a> {{/if}}           </label>
   {{/if}}
-            <select class="form-select" id="{{config.field}}" value="{{value}}">  
+            <select class="form-select {{#if error}}is-invalid{{/if}}" id="{{config.field}}" value="{{value}}">  
                 {{#each config.options as option}}
                     {{#if typeof option == "string"}}
                         <option {{#if config.multiple && selectedValues && selectedValues.includes(option)}}style="background:#0d6efd61;font-style:italic;color:white"{{/if}} value="{{option}}" >{{option}}</option>
@@ -294,6 +395,9 @@ Ractive.components["select-input"] = Ractive.extend({
                     {{/if}}
                 {{/each}}
             </select> 
+            <div class="invalid-feedback">
+              {{#if error && error.message}}{{error.message}}{{else}}Value is not correct!{{/if}}
+            </div>
 
         {{#if config.multiple}}
         <ul class="nav nav-pills" style="margin-top:1em;font-size: small;">
@@ -325,6 +429,12 @@ Ractive.components["select-input"] = Ractive.extend({
             this.get("selectedValues")
           );
         } else {
+          window[this.parent.get("global_variable")][this.get("config.field")] =
+            newValue;
+          this.root.set(`formData.${this.get("config.field")}`, newValue);
+        }
+      } else {
+        if (!this.get("config.multiple")) {
           window[this.parent.get("global_variable")][this.get("config.field")] =
             newValue;
           this.root.set(`formData.${this.get("config.field")}`, newValue);

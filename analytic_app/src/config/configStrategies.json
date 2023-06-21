@@ -1,0 +1,21 @@
+[
+    {
+        "name":"Reversal",
+        "description": "Reversal algo",
+        "strategy_settings" : [
+            {
+                "id":"DATA_SETTINGS",
+                "parameters" : [
+                    
+                ]  
+            },
+            {
+                "id" : "CONFIG_SETTINGS",
+                "parameters": []
+            }
+        ]
+    },
+    {
+
+    }
+]
